@@ -121,13 +121,16 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                 (int(landmark.x * FRAME_WIDTH), int(landmark.y * FRAME_HEIGHT))
                 for landmark in landmarks
             ]
-            # mp_drawing.draw_landmarks(
-            #     frame,
-            #     hand_landmarks,
-            #     mp_hands.HAND_CONNECTIONS,
-            #     mp_drawing_styles.get_default_hand_landmarks_style(),
-            #     mp_drawing_styles.get_default_hand_connections_style(),
-            # )
+
+            fingers_extended = [False] * 5
+
+            mp_drawing.draw_landmarks(
+                frame,
+                hand_landmarks,
+                mp_hands.HAND_CONNECTIONS,
+                mp_drawing_styles.get_default_hand_landmarks_style(),
+                mp_drawing_styles.get_default_hand_connections_style(),
+            )
 
             #  Thumb
             wrist = coordinates[0]
@@ -145,6 +148,7 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
 
             # Finger is not bent
             else:
+                fingers_extended[0] = True
                 cv2.circle(frame, thumb_bend, 10, (0, 255, 0), -1)
 
             # Index finger
@@ -161,6 +165,7 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
 
             # Finger is not bent
             else:
+                fingers_extended[1] = True
                 cv2.circle(frame, knuckle, 10, (0, 255, 0), -1)
 
             # Middle finger
@@ -177,6 +182,7 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
 
             # Finger is not bent
             else:
+                fingers_extended[2] = True
                 cv2.circle(frame, knuckle, 10, (0, 255, 0), -1)
 
             # Ring finger
@@ -193,6 +199,7 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
 
             # Finger is not bent
             else:
+                fingers_extended[3] = True
                 cv2.circle(frame, knuckle, 10, (0, 255, 0), -1)
 
             # Pinky finger
@@ -209,7 +216,38 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
 
             # Finger is not bent
             else:
+                fingers_extended[4] = True
                 cv2.circle(frame, knuckle, 10, (0, 255, 0), -1)
+
+            gesture = ""
+
+            if fingers_extended == [True, False, False, False, False]:
+                gesture = "Thumbs"
+
+            elif fingers_extended == [False, True, False, False, False]:
+                gesture = "Point"
+
+            elif fingers_extended == [True, True, False, False, False]:
+                gesture = "Gun"
+
+            elif fingers_extended == [False, False, True, False, False]:
+                gesture = "Fuck You"
+
+            elif fingers_extended == [False, True, False, False, True]:
+                gesture = "Rock On"
+
+            elif fingers_extended == [True, False, False, False, True]:
+                gesture = "Call Me"
+
+            cv2.putText(
+                frame,
+                gesture,
+                coordinates[0],
+                cv2.FONT_HERSHEY_TRIPLEX,
+                0.5,
+                (0, 0, 255),
+                2,
+            )
 
     return frame
 
