@@ -6,8 +6,18 @@ import time
 
 
 HEADLESS_MODE = False
+MIRROR_CAMERA = True
 
-hands = mediapipe.solutions.hands
+
+mp_hands = mediapipe.solutions.hands
+mp_drawing = mediapipe.solutions.drawing_utils
+mp_drawing_styles = mediapipe.solutions.drawing_styles
+hands = mp_hands.Hands(
+    static_image_mode=False,
+    max_num_hands=2,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5,
+)
 
 
 if platform.system() == "Windows":
@@ -16,7 +26,7 @@ if platform.system() == "Windows":
     # When benchmarked against each other, the RPi 4B was 6 times slower at
     # processing images than the Windows laptop I am using.
     DELAY_MULTIPLIER = 5
-
+    # DELAY_MULTIPLIER = 0
 
     cap = cv2.VideoCapture(0)
 
@@ -27,6 +37,10 @@ if platform.system() == "Windows":
         if not success:
             pass
             # TODO do something
+
+        # Flip the frame horizontally for a mirror effect
+        if MIRROR_CAMERA:
+            bgr_frame = cv2.flip(bgr_frame, 1)
 
         rgb_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
 
@@ -42,7 +56,7 @@ else:
 
     pi_cam = picamera2.Picamera2()
     config = pi_cam.create_video_configuration()
-    config["transform"] = Transform(hflip=1, vflip=1)
+    config["transform"] = Transform(hflip=MIRROR_CAMERA, vflip=1)
     pi_cam.configure(config)
     pi_cam.start()
 
@@ -60,7 +74,25 @@ def show_rgb(name: str, image: numpy.ndarray) -> None:
     cv2.waitKey(1)
 
 
+def process_image(frame: numpy.ndarray) -> numpy.ndarray:
 
+    results = hands.process(frame)
+
+    if results.multi_hand_landmarks:
+        for hand_landmarks in results.multi_hand_landmarks:
+            # Draw the landmarks and connections on the original frame
+            mp_drawing.draw_landmarks(
+                frame, hand_landmarks, mp_hands.HAND_CONNECTIONS
+            )
+            mp_drawing.draw_landmarks(
+                frame,
+                hand_landmarks,
+                mp_hands.HAND_CONNECTIONS,
+                mp_drawing_styles.get_default_hand_landmarks_style(),
+                mp_drawing_styles.get_default_hand_connections_style(),
+            )
+
+    return frame
 
 
 def main() -> int:
@@ -73,12 +105,14 @@ def main() -> int:
 
         frame = get_rgb_frame()
 
+        frame = process_image(frame)
+
         show_rgb("frame", frame)
 
         end_time = time.time()
         processing_time = end_time - start_time
 
-        print(processing_time)
+        print(f"Processing Time: {(processing_time * 1000):.2f}MS")
 
         time.sleep(processing_time * DELAY_MULTIPLIER)
 
