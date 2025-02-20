@@ -72,24 +72,23 @@ else:
         return pi_cam.capture_array()
 
 
-def finger_bend(A, B, C, D):
+def finger_bend(A, B, C) -> float:
 
     # https://mathsathome.com/angle-between-two-vectors/
 
     A = numpy.array(A)
     B = numpy.array(B)
     C = numpy.array(C)
-    D = numpy.array(D)
 
     AB = B - A
-    CD = D - C
+    BC = C - B
 
     # print(BC)
 
     angle_AB = numpy.arctan2(*AB)
-    angle_CD = numpy.arctan2(*CD)
+    angle_BC = numpy.arctan2(*BC)
 
-    angle_diff = angle_CD - angle_AB  # Radians
+    angle_diff = angle_BC - angle_AB  # Radians
 
     # Normalize the angle to be between -pi and pi
     angle_diff = numpy.mod(angle_diff + numpy.pi, 2 * numpy.pi) - numpy.pi
@@ -112,16 +111,14 @@ def is_pointed(landmarks: list, finger_index: int) -> bool:
 
     bend_threshold = 60
 
-    knuckle_indexes = [2, 5, 9, 13, 17]
-    bend_indexes = [3, 7, 11, 15, 19]
+    bend_indexes = [2, 6, 10, 14, 18]
     tip_indexes = [4, 8, 12, 16, 20]
 
     wrist = landmarks[0]
-    knuckle = landmarks[knuckle_indexes[finger_index]]
-    bend = landmarks[bend_indexes[finger_index]]
+    knuckle = landmarks[bend_indexes[finger_index]]
     tip = landmarks[tip_indexes[finger_index]]
 
-    bend = finger_bend(wrist, knuckle, bend, tip)
+    bend = finger_bend(wrist, knuckle, tip)
 
     return bend <= bend_threshold
 
@@ -140,11 +137,19 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                 for landmark in landmarks
             ]
 
-            gesture_idex = 0
+            mp_drawing.draw_landmarks(
+                frame,
+                hand_landmarks,
+                mp_hands.HAND_CONNECTIONS,
+                mp_drawing_styles.get_default_hand_landmarks_style(),
+                mp_drawing_styles.get_default_hand_connections_style(),
+            )
+
+            gesture_index = 0
 
             #  Thumb
             for x in range(5):
-                gesture_idex |= is_pointed(coordinates, x) << x
+                gesture_index |= is_pointed(coordinates, x) << x
 
                 knuckle_indexes = [2, 5, 9, 13, 17]
 
@@ -152,7 +157,11 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                     frame,
                     coordinates[knuckle_indexes[x]],
                     10,
-                    ((0, 255, 0) if ((gesture_idex >> x) & 1) else (255, 0, 0)),
+                    (
+                        (0, 255, 0)
+                        if ((gesture_index >> x) & 1)
+                        else (255, 0, 0)
+                    ),
                     -1,
                 )
 
@@ -188,11 +197,11 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
             gestures[0b11100] = "Pinky, Ring and Middle"
             gestures[0b11101] = "Pinky, Ring, Middle and Thumb"
             gestures[0b11110] = "American Four"
-            gestures[0b11111] = "German Five"
+            gestures[0b11111] = "Halt"
 
             cv2.putText(
                 frame,
-                gestures[gesture_idex],
+                gestures[gesture_index],
                 coordinates[0],
                 cv2.FONT_HERSHEY_TRIPLEX,
                 0.5,
@@ -200,7 +209,7 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                 2,
             )
 
-            print(gesture_idex)
+            print(gesture_index)
 
     return frame
 
