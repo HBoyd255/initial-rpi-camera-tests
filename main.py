@@ -8,14 +8,14 @@ HEADLESS_MODE = False
 hands = mediapipe.solutions.hands
 
 
-
-
 cap = cv2.VideoCapture(0)
+
+
 def get_rgb_frame() -> numpy.ndarray:
 
     system = platform.system()
 
-    print(f"System is "{system})
+    print(f"System is {system}")
 
     success, frame = cap.read()
 
@@ -23,8 +23,7 @@ def get_rgb_frame() -> numpy.ndarray:
         pass
         # TODO do something
 
-    return frame
-    return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 
 def main() -> int:
@@ -33,7 +32,10 @@ def main() -> int:
         frame = get_rgb_frame()
 
         if not HEADLESS_MODE:
-            cv2.imshow("Frame", frame)
+
+            # Covert to BGR for displaying
+            BGR = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            cv2.imshow("Frame", BGR)
 
             cv2.waitKey(1)
 
