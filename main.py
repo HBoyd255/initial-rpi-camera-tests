@@ -140,46 +140,59 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                 for landmark in landmarks
             ]
 
-            fingers_extended = [False] * 5
+            gesture_idex = 0
 
             #  Thumb
             for x in range(5):
-                fingers_extended[x] = is_pointed(coordinates, x)
+                gesture_idex |= is_pointed(coordinates, x) << x
 
-            knuckle_indexes = [2, 5, 9, 13, 17]
+                knuckle_indexes = [2, 5, 9, 13, 17]
 
-            for x in range(5):
                 cv2.circle(
                     frame,
                     coordinates[knuckle_indexes[x]],
                     10,
-                    (0, 255, 0) if fingers_extended[x] else (255, 0, 0),
+                    ((0, 255, 0) if ((gesture_idex >> x) & 1) else (255, 0, 0)),
                     -1,
                 )
 
-            gesture = ""
-
-            if fingers_extended == [True, False, False, False, False]:
-                gesture = "Thumbs"
-
-            elif fingers_extended == [False, True, False, False, False]:
-                gesture = "Point"
-
-            elif fingers_extended == [True, True, False, False, False]:
-                gesture = "Gun"
-
-            elif fingers_extended == [False, False, True, False, False]:
-                gesture = "Fuck You"
-
-            elif fingers_extended == [False, True, False, False, True]:
-                gesture = "Rock On"
-
-            elif fingers_extended == [True, False, False, False, True]:
-                gesture = "Call Me"
+            gestures = [""] * 32
+            gestures[0b00000] = "Fist"
+            gestures[0b00001] = "Thumb"
+            gestures[0b00010] = "Index"
+            gestures[0b00011] = "German Two"
+            gestures[0b00100] = "Middle"
+            gestures[0b00101] = "Middle and Thumb"
+            gestures[0b00110] = "Peace"
+            gestures[0b00111] = "German Three"
+            gestures[0b01000] = "Ring"
+            gestures[0b01001] = "Ring and Thumb"
+            gestures[0b01010] = "Ring and Index"
+            gestures[0b01011] = "Ring, Index and Thumb"
+            gestures[0b01100] = "Ring and Middle"
+            gestures[0b01101] = "Ring and Middle and Thumb"
+            gestures[0b01110] = "American Three"
+            gestures[0b01111] = "German Four"
+            gestures[0b10000] = "Pinky"
+            gestures[0b10001] = "Call Me"
+            gestures[0b10010] = "Rock On"
+            gestures[0b10011] = "Spider-man"
+            gestures[0b10100] = "Middle and Pinky"
+            gestures[0b10101] = "Pinky, Middle and Thumb"
+            gestures[0b10110] = "Index, Middle and Pinky"
+            gestures[0b10111] = "Index, Middle, Pinky and Thumb"
+            gestures[0b11000] = "Pinky and Ring"
+            gestures[0b11001] = "Pinky, Ring and Thumb"
+            gestures[0b11010] = "Pinky, Ring and Index"
+            gestures[0b11011] = "Pinky, Ring, Index and Thumb"
+            gestures[0b11100] = "Pinky, Ring and Middle"
+            gestures[0b11101] = "Pinky, Ring, Middle and Thumb"
+            gestures[0b11110] = "American Four"
+            gestures[0b11111] = "German Five"
 
             cv2.putText(
                 frame,
-                gesture,
+                gestures[gesture_idex],
                 coordinates[0],
                 cv2.FONT_HERSHEY_TRIPLEX,
                 0.5,
@@ -187,13 +200,7 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                 2,
             )
 
-            mp_drawing.draw_landmarks(
-                frame,
-                hand_landmarks,
-                mp_hands.HAND_CONNECTIONS,
-                mp_drawing_styles.get_default_hand_landmarks_style(),
-                mp_drawing_styles.get_default_hand_connections_style(),
-            )
+            print(gesture_idex)
 
     return frame
 
