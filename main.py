@@ -8,22 +8,20 @@ HEADLESS_MODE = False
 hands = mediapipe.solutions.hands
 
 
-cap = cv2.VideoCapture(0)
+if platform.system() == "Windows":
+    cap = cv2.VideoCapture(0)
 
 
-def get_rgb_frame() -> numpy.ndarray:
+    def get_rgb_frame() -> numpy.ndarray:
 
-    system = platform.system()
+        success, frame = cap.read()
 
-    print(f"System is {system}")
+        if not success:
+            pass
+            # TODO do something
 
-    success, frame = cap.read()
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    if not success:
-        pass
-        # TODO do something
-
-    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 
 def main() -> int:
