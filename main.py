@@ -108,6 +108,24 @@ def show_rgb(name: str, image: numpy.ndarray) -> None:
     cv2.waitKey(1)
 
 
+def is_pointed(landmarks: list, finger_index: int) -> bool:
+
+    bend_threshold = 60
+
+    knuckle_indexes = [2, 5, 9, 13, 17]
+    bend_indexes = [3, 7, 11, 15, 19]
+    tip_indexes = [4, 8, 12, 16, 20]
+
+    wrist = landmarks[0]
+    knuckle = landmarks[knuckle_indexes[finger_index]]
+    bend = landmarks[bend_indexes[finger_index]]
+    tip = landmarks[tip_indexes[finger_index]]
+
+    bend = finger_bend(wrist, knuckle, bend, tip)
+
+    return bend <= bend_threshold
+
+
 def process_image(frame: numpy.ndarray) -> numpy.ndarray:
 
     results = hands.process(frame)
@@ -124,100 +142,20 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
 
             fingers_extended = [False] * 5
 
-            mp_drawing.draw_landmarks(
-                frame,
-                hand_landmarks,
-                mp_hands.HAND_CONNECTIONS,
-                mp_drawing_styles.get_default_hand_landmarks_style(),
-                mp_drawing_styles.get_default_hand_connections_style(),
-            )
-
             #  Thumb
-            wrist = coordinates[0]
-            knuckle = coordinates[1]
-            bend = coordinates[3]
-            tip = coordinates[4]
+            for x in range(5):
+                fingers_extended[x] = is_pointed(coordinates, x)
 
-            bend = finger_bend(wrist, knuckle, bend, tip)
+            knuckle_indexes = [2, 5, 9, 13, 17]
 
-            thumb_bend = coordinates[2]
-
-            # Finger is bent
-            if bend > 60:
-                cv2.circle(frame, thumb_bend, 10, (255, 0, 0), -1)
-
-            # Finger is not bent
-            else:
-                fingers_extended[0] = True
-                cv2.circle(frame, thumb_bend, 10, (0, 255, 0), -1)
-
-            # Index finger
-            wrist = coordinates[0]
-            knuckle = coordinates[5]
-            bend = coordinates[7]
-            tip = coordinates[8]
-
-            bend = finger_bend(wrist, knuckle, bend, tip)
-
-            # Finger is bent
-            if bend > 60:
-                cv2.circle(frame, knuckle, 10, (255, 0, 0), -1)
-
-            # Finger is not bent
-            else:
-                fingers_extended[1] = True
-                cv2.circle(frame, knuckle, 10, (0, 255, 0), -1)
-
-            # Middle finger
-            wrist = coordinates[0]
-            knuckle = coordinates[9]
-            bend = coordinates[11]
-            tip = coordinates[12]
-
-            bend = finger_bend(wrist, knuckle, bend, tip)
-
-            # Finger is bent
-            if bend > 60:
-                cv2.circle(frame, knuckle, 10, (255, 0, 0), -1)
-
-            # Finger is not bent
-            else:
-                fingers_extended[2] = True
-                cv2.circle(frame, knuckle, 10, (0, 255, 0), -1)
-
-            # Ring finger
-            wrist = coordinates[0]
-            knuckle = coordinates[13]
-            bend = coordinates[15]
-            tip = coordinates[16]
-
-            bend = finger_bend(wrist, knuckle, bend, tip)
-
-            # Finger is bent
-            if bend > 60:
-                cv2.circle(frame, knuckle, 10, (255, 0, 0), -1)
-
-            # Finger is not bent
-            else:
-                fingers_extended[3] = True
-                cv2.circle(frame, knuckle, 10, (0, 255, 0), -1)
-
-            # Pinky finger
-            wrist = coordinates[0]
-            knuckle = coordinates[17]
-            bend = coordinates[19]
-            tip = coordinates[20]
-
-            bend = finger_bend(wrist, knuckle, bend, tip)
-
-            # Finger is bent
-            if bend > 60:
-                cv2.circle(frame, knuckle, 10, (255, 0, 0), -1)
-
-            # Finger is not bent
-            else:
-                fingers_extended[4] = True
-                cv2.circle(frame, knuckle, 10, (0, 255, 0), -1)
+            for x in range(5):
+                cv2.circle(
+                    frame,
+                    coordinates[knuckle_indexes[x]],
+                    10,
+                    (0, 255, 0) if fingers_extended[x] else (255, 0, 0),
+                    -1,
+                )
 
             gesture = ""
 
@@ -247,6 +185,14 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                 0.5,
                 (0, 0, 255),
                 2,
+            )
+
+            mp_drawing.draw_landmarks(
+                frame,
+                hand_landmarks,
+                mp_hands.HAND_CONNECTIONS,
+                mp_drawing_styles.get_default_hand_landmarks_style(),
+                mp_drawing_styles.get_default_hand_connections_style(),
             )
 
     return frame
