@@ -3,6 +3,7 @@ import mediapipe
 import numpy
 import platform
 
+
 HEADLESS_MODE = False
 
 hands = mediapipe.solutions.hands
@@ -10,7 +11,6 @@ hands = mediapipe.solutions.hands
 
 if platform.system() == "Windows":
     cap = cv2.VideoCapture(0)
-
 
     def get_rgb_frame() -> numpy.ndarray:
 
@@ -22,6 +22,20 @@ if platform.system() == "Windows":
 
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+else:
+
+    import picamera2
+    from libcamera import Transform
+
+    pi_cam = picamera2.Picamera2()
+    config = pi_cam.create_video_configuration()
+    config["transform"] = Transform(hflip = 1, vflip = 1)
+    pi_cam.configure(config)
+    pi_cam.start()
+
+    def get_rgb_frame() -> numpy.ndarray:
+
+        return pi_cam.capture_array()
 
 
 def main() -> int:
