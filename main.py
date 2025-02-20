@@ -72,32 +72,6 @@ else:
         return pi_cam.capture_array()
 
 
-def bend_between_points(A, B, C):
-
-    # https://mathsathome.com/angle-between-two-vectors/
-
-    A = numpy.array(A)
-    B = numpy.array(B)
-    C = numpy.array(C)
-
-    AB = B - A
-    BC = C - B
-
-    # print(BC)
-
-    angle_AB = numpy.arctan2(*AB)
-    angle_BC = numpy.arctan2(*BC)
-
-    angle_diff = angle_BC - angle_AB  # Radians
-
-    # Normalize the angle to be between -pi and pi
-    angle_diff = numpy.mod(angle_diff + numpy.pi, 2 * numpy.pi) - numpy.pi
-
-    degrees = numpy.degrees(angle_diff)
-
-    return degrees
-
-
 def finger_bend(A, B, C, D):
 
     # https://mathsathome.com/angle-between-two-vectors/
@@ -122,7 +96,7 @@ def finger_bend(A, B, C, D):
 
     degrees = numpy.degrees(angle_diff)
 
-    return degrees
+    return abs(degrees)
 
 
 def show_rgb(name: str, image: numpy.ndarray) -> None:
@@ -155,25 +129,19 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                 mp_drawing_styles.get_default_hand_connections_style(),
             )
 
-            V1 = coordinates[0]
-            V2 = coordinates[5]
-            V3 = coordinates[6]
-            V4 = coordinates[7]
-            V5 = coordinates[8]
+            # Index finger
+            wrist = coordinates[0]
+            knuckle = coordinates[5]
+            bend = coordinates[7]
+            tip = coordinates[8]
 
-            J1 = bend_between_points(V1, V2, V3)
-            J2 = bend_between_points(V2, V3, V4)
-            J3 = bend_between_points(V3, V4, V5)
+            bend = finger_bend(wrist, knuckle, bend, tip)
 
-            bend = finger_bend(V1, V2, V4, V5)
-
-            # print(J1, J2, J3)
-
-            total = J1 + J2 + J3
-
-            print(total, bend)
-
-            cv2.circle(frame, V2, 10, (0, 255, 0), -1)
+            # Finger is bent
+            if bend > 60:
+                cv2.circle(frame, knuckle, 10, (255, 0, 0), -1)
+            else:
+                cv2.circle(frame, knuckle, 10, (0, 255, 0), -1)
 
             # print(angle)
 
