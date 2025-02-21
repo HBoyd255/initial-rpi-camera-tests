@@ -1,6 +1,17 @@
-
-
+# Environment and IDE files
 venv/
 .vscode/
+__pycache__/
 
+# Hidden files
+*HIDE*
+*HIDDEN*
+
+# Photos
+*.jpg
+*.jpeg
 *.png
+
+# Zip files
+*.zip
+

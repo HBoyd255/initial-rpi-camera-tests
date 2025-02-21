@@ -5,7 +5,6 @@ import numpy
 import platform
 import time
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--headless",
@@ -13,7 +12,6 @@ parser.add_argument(
     help="Runs the program without displaying the camera feed.",
 )
 
-HEADLESS_MODE = False
 MIRROR_CAMERA = True
 
 
@@ -233,7 +231,6 @@ def main() -> int:
 
     processing_time = 0
     processing_times = []
-    average_processing_time = 0
     fps = 0
     frames_to_average = 10
 
@@ -257,12 +254,11 @@ def main() -> int:
         processing_times.append(processing_time)
 
         if len(processing_times) == frames_to_average:
-            average_processing_time = numpy.mean(processing_times)
-            fps = int(1 / processing_time)
+            fps = int(1 / numpy.mean(processing_times))
             processing_times = []
 
         print(
-            f"P= {(average_processing_time * 1000):.0f}MS "
+            f"P= {(processing_time * 1000):.0f}MS "
             f"FPS= {fps:02d}, "
             f"Gesture= {gesture}"
         )
@@ -283,7 +279,8 @@ if __name__ == "__main__":
 
 # Frame rate
 
-# When plugged in, running headless, my laptop averages 28 FPS, while detecting 
+# When plugged in, running headless, my laptop averages 28 FPS, while detecting
 # hands.
 
-
+# When running headless, the RPi 4B 8GB averages 4 FPS, while detecting hands.
+# This with or without an x-server running.
