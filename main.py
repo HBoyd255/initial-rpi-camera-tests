@@ -1,9 +1,17 @@
+import argparse
 import cv2
 import mediapipe
 import numpy
 import platform
 import time
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--headless",
+    action="store_true",
+    help="Runs the program without displaying the camera feed.",
+)
 
 HEADLESS_MODE = False
 MIRROR_CAMERA = True
@@ -162,7 +170,7 @@ def is_pointed(landmarks: list, finger_index: int) -> bool:
     return bend <= bend_threshold
 
 
-def process_image(frame: numpy.ndarray) -> numpy.ndarray:
+def process_image(frame: numpy.ndarray) -> [str, numpy.ndarray]:
 
     results = hands.process(frame)
 
@@ -214,14 +222,20 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                 2,
             )
 
-            print(f"detected gesture: {GESTURES[gesture_index]}")
+        # print(f"detected gesture: {GESTURES[gesture_index]}")
 
-    return frame
+        return GESTURES[gesture_index], frame
+
+    return "NONE", frame
 
 
 def main() -> int:
 
     processing_time = 0
+    processing_times = []
+    average_processing_time = 0
+    fps = 0
+    frames_to_average = 10
 
     while True:
 
@@ -229,14 +243,29 @@ def main() -> int:
 
         frame = get_rgb_frame()
 
-        frame = process_image(frame)
+        gesture, frame = process_image(frame)
 
-        show_rgb("frame", frame)
+        args = parser.parse_args()
+
+        # Check if headless mode is enabled
+        if not args.headless:
+            show_rgb("frame", frame)
 
         end_time = time.time()
         processing_time = end_time - start_time
 
-        print(f"Processing Time: {(processing_time * 1000):.2f}MS")
+        processing_times.append(processing_time)
+
+        if len(processing_times) == frames_to_average:
+            average_processing_time = numpy.mean(processing_times)
+            fps = int(1 / processing_time)
+            processing_times = []
+
+        print(
+            f"P= {(average_processing_time * 1000):.0f}MS "
+            f"FPS= {fps:02d}, "
+            f"Gesture= {gesture}"
+        )
 
         time.sleep(processing_time * DELAY_MULTIPLIER)
 
@@ -250,3 +279,11 @@ if __name__ == "__main__":
 # RGB images are the default for this project, as they are used by both the RPi
 # camera and Mediapipe. However, CV2 uses BGR for both reading from the camera
 # and displaying images.
+
+
+# Frame rate
+
+# When plugged in, running headless, my laptop averages 28 FPS, while detecting 
+# hands.
+
+
