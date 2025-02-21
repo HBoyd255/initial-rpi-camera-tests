@@ -19,6 +19,39 @@ hands = mp_hands.Hands(
     min_tracking_confidence=0.5,
 )
 
+GESTURES = [""] * 32
+GESTURES[0b00000] = "Fist"
+GESTURES[0b00001] = "Thumb"
+GESTURES[0b00010] = "Index"
+GESTURES[0b00011] = "German Two"
+GESTURES[0b00100] = "Middle"
+GESTURES[0b00101] = "Middle and Thumb"
+GESTURES[0b00110] = "Peace"
+GESTURES[0b00111] = "German Three"
+GESTURES[0b01000] = "Ring"
+GESTURES[0b01001] = "Ring and Thumb"
+GESTURES[0b01010] = "Ring and Index"
+GESTURES[0b01011] = "Ring, Index and Thumb"
+GESTURES[0b01100] = "Ring and Middle"
+GESTURES[0b01101] = "Ring and Middle and Thumb"
+GESTURES[0b01110] = "American Three"
+GESTURES[0b01111] = "German Four"
+GESTURES[0b10000] = "Pinky"
+GESTURES[0b10001] = "Call Me"
+GESTURES[0b10010] = "Rock On"
+GESTURES[0b10011] = "Spider-man"
+GESTURES[0b10100] = "Middle and Pinky"
+GESTURES[0b10101] = "Pinky, Middle and Thumb"
+GESTURES[0b10110] = "Index, Middle and Pinky"
+GESTURES[0b10111] = "Index, Middle, Pinky and Thumb"
+GESTURES[0b11000] = "Pinky and Ring"
+GESTURES[0b11001] = "Pinky, Ring and Thumb"
+GESTURES[0b11010] = "Pinky, Ring and Index"
+GESTURES[0b11011] = "Pinky, Ring, Index and Thumb"
+GESTURES[0b11100] = "Pinky, Ring and Middle"
+GESTURES[0b11101] = "Pinky, Ring, Middle and Thumb"
+GESTURES[0b11110] = "American Four"
+GESTURES[0b11111] = "Halt"
 
 if platform.system() == "Windows":
 
@@ -58,14 +91,21 @@ else:
     from libcamera import Transform  # type: ignore
 
     pi_cam = picamera2.Picamera2()
-    config = pi_cam.create_video_configuration()
-    config["transform"] = Transform(hflip=MIRROR_CAMERA, vflip=1)
+
+    # For a reason unknown to me, BGRFist88 gives images in RGB format, and RGB888
+    # gives BGR images. I may investigate this later, but for now it works just
+    # to request to opposite format.
+    config = pi_cam.create_video_configuration({"format": "BGR888"})
+    config["transform"] = Transform(hflip=not MIRROR_CAMERA, vflip=1)
     pi_cam.configure(config)
     pi_cam.start()
 
-    # TODO: add
-    # FRAME_WIDTH =
-    # FRAME_HEIGHT =
+    template_image = pi_cam.capture_array()
+
+    FRAME_HEIGHT = len(template_image)
+    FRAME_WIDTH = len(template_image[0])
+
+    del template_image
 
     def get_rgb_frame() -> numpy.ndarray:
 
@@ -73,8 +113,6 @@ else:
 
 
 def finger_bend(A, B, C) -> float:
-
-    # https://mathsathome.com/angle-between-two-vectors/
 
     A = numpy.array(A)
     B = numpy.array(B)
@@ -102,6 +140,7 @@ def show_rgb(name: str, image: numpy.ndarray) -> None:
 
     # Covert to BGR for displaying
     BGR_frame = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
     cv2.imshow(name, BGR_frame)
 
     cv2.waitKey(1)
@@ -162,46 +201,12 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                         if ((gesture_index >> x) & 1)
                         else (255, 0, 0)
                     ),
-                    -1,
+                    5,
                 )
-
-            gestures = [""] * 32
-            gestures[0b00000] = "Fist"
-            gestures[0b00001] = "Thumb"
-            gestures[0b00010] = "Index"
-            gestures[0b00011] = "German Two"
-            gestures[0b00100] = "Middle"
-            gestures[0b00101] = "Middle and Thumb"
-            gestures[0b00110] = "Peace"
-            gestures[0b00111] = "German Three"
-            gestures[0b01000] = "Ring"
-            gestures[0b01001] = "Ring and Thumb"
-            gestures[0b01010] = "Ring and Index"
-            gestures[0b01011] = "Ring, Index and Thumb"
-            gestures[0b01100] = "Ring and Middle"
-            gestures[0b01101] = "Ring and Middle and Thumb"
-            gestures[0b01110] = "American Three"
-            gestures[0b01111] = "German Four"
-            gestures[0b10000] = "Pinky"
-            gestures[0b10001] = "Call Me"
-            gestures[0b10010] = "Rock On"
-            gestures[0b10011] = "Spider-man"
-            gestures[0b10100] = "Middle and Pinky"
-            gestures[0b10101] = "Pinky, Middle and Thumb"
-            gestures[0b10110] = "Index, Middle and Pinky"
-            gestures[0b10111] = "Index, Middle, Pinky and Thumb"
-            gestures[0b11000] = "Pinky and Ring"
-            gestures[0b11001] = "Pinky, Ring and Thumb"
-            gestures[0b11010] = "Pinky, Ring and Index"
-            gestures[0b11011] = "Pinky, Ring, Index and Thumb"
-            gestures[0b11100] = "Pinky, Ring and Middle"
-            gestures[0b11101] = "Pinky, Ring, Middle and Thumb"
-            gestures[0b11110] = "American Four"
-            gestures[0b11111] = "Halt"
 
             cv2.putText(
                 frame,
-                gestures[gesture_index],
+                GESTURES[gesture_index],
                 coordinates[0],
                 cv2.FONT_HERSHEY_TRIPLEX,
                 0.5,
@@ -209,7 +214,7 @@ def process_image(frame: numpy.ndarray) -> numpy.ndarray:
                 2,
             )
 
-            print(gesture_index)
+            print(f"detected gesture: {GESTURES[gesture_index]}")
 
     return frame
 
@@ -231,7 +236,7 @@ def main() -> int:
         end_time = time.time()
         processing_time = end_time - start_time
 
-        # print(f"Processing Time: {(processing_time * 1000):.2f}MS")
+        print(f"Processing Time: {(processing_time * 1000):.2f}MS")
 
         time.sleep(processing_time * DELAY_MULTIPLIER)
 
