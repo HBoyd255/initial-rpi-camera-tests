@@ -5,12 +5,21 @@ import numpy
 import platform
 import time
 
+from modules.server_setup import start_server, send_to_server
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--headless",
     action="store_true",
     help="Runs the program without displaying the camera feed.",
 )
+
+parser.add_argument(
+    "--server",
+    action="store_true",
+    help="Makes the camera feed available on a local server.",
+)
+
 
 MIRROR_CAMERA = True
 
@@ -127,8 +136,6 @@ def finger_bend(A, B, C) -> float:
     AB = B - A
     BC = C - B
 
-    # print(BC)
-
     angle_AB = numpy.arctan2(*AB)
     angle_BC = numpy.arctan2(*BC)
 
@@ -168,7 +175,7 @@ def is_pointed(landmarks: list, finger_index: int) -> bool:
     return bend <= bend_threshold
 
 
-def process_image(frame: numpy.ndarray) -> [str, numpy.ndarray]:
+def process_image(frame: numpy.ndarray) -> tuple[str, numpy.ndarray]:
 
     results = hands.process(frame)
 
@@ -229,6 +236,11 @@ def process_image(frame: numpy.ndarray) -> [str, numpy.ndarray]:
 
 def main() -> int:
 
+    args = parser.parse_args()
+
+    if args.server:
+        start_server()
+
     processing_time = 0
     processing_times = []
     fps = 0
@@ -242,11 +254,12 @@ def main() -> int:
 
         gesture, frame = process_image(frame)
 
-        args = parser.parse_args()
-
         # Check if headless mode is enabled
         if not args.headless:
             show_rgb("frame", frame)
+
+        if args.server:
+            send_to_server(frame)
 
         end_time = time.time()
         processing_time = end_time - start_time
