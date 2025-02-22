@@ -97,7 +97,9 @@ if platform.system() == "Windows":
 
         return rgb_frame
 
-else:
+
+# If the platform is Linux, assume the program is running on the RPi.
+elif platform.system() == "Linux":
     # Setup for the RPi
 
     DELAY_MULTIPLIER = 0
