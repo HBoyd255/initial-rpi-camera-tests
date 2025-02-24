@@ -15,7 +15,7 @@ PORT = 1234
 
 def _compress_and_send(client_socket, frame):
 
-    params = [cv2.IMWRITE_JPEG_QUALITY, 90]
+    params = [cv2.IMWRITE_JPEG_QUALITY, 50]
     data = cv2.imencode(".jpg", frame, params)[1].tobytes()
 
     # Print the size of the serialized frame in bytes
