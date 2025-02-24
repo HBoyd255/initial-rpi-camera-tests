@@ -19,8 +19,11 @@ def _compress_and_send(client_socket, frame):
     data = cv2.imencode(".jpg", frame, params)[1].tobytes()
 
     # Print the size of the serialized frame in bytes
-    uncompressed_size = sys.getsizeof(frame)
+    x, y, z = frame.shape
+    uncompressed_size = x * y * z
     compressed_size = sys.getsizeof(data)
+
+    
 
     print(f"Sending UCMP= {uncompressed_size} bytes", end=", ")
     print(f"CMP= {compressed_size} bytes", end=", ")
