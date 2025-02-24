@@ -9,8 +9,7 @@ import cv2
 
 frame_queue = queue.Queue(maxsize=1)
 
-# Using localhost for now
-IP = "127.0.0.1"
+IP = "144.32.70.230"
 PORT = 1234
 
 

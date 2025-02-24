@@ -2,8 +2,7 @@ import socket
 import cv2
 import numpy
 
-# Using localhost for now
-IP = "127.0.0.1"
+IP = "144.32.70.230"
 PORT = 1234
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
