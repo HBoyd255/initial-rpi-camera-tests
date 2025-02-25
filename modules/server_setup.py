@@ -9,7 +9,7 @@ import cv2
 
 frame_queue = queue.Queue(maxsize=1)
 
-IP = "144.32.70.230"
+IP = "144.32.70.219"
 PORT = 1234
 
 

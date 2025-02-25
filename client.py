@@ -2,7 +2,7 @@ import socket
 import cv2
 import numpy
 
-IP = "144.32.70.230"
+IP = "144.32.70.219"
 PORT = 1234
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
