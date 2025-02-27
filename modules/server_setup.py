@@ -5,11 +5,13 @@ import sys
 import threading
 import time
 import cv2
+from modules.file_utils import text_file_to_string
 
 
 frame_queue = queue.Queue(maxsize=1)
 
-IP = "144.32.70.219"
+
+IP = text_file_to_string("secrets/IP.txt")
 PORT = 1234
 
 
@@ -22,8 +24,6 @@ def _compress_and_send(client_socket, frame):
     x, y, z = frame.shape
     uncompressed_size = x * y * z
     compressed_size = sys.getsizeof(data)
-
-    
 
     print(f"Sending UCMP= {uncompressed_size} bytes", end=", ")
     print(f"CMP= {compressed_size} bytes", end=", ")

@@ -1,8 +1,9 @@
 import socket
 import cv2
 import numpy
+from modules.file_utils import text_file_to_string
 
-IP = "144.32.70.219"
+IP = text_file_to_string("secrets/IP.txt")
 PORT = 1234
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
