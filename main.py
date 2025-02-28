@@ -258,7 +258,7 @@ def main() -> int:
 
         # Check if headless mode is enabled
         if not args.headless:
-            show_rgb("frame", frame)
+            show_rgb("Server Frame", frame)
 
         if args.server:
             send_to_server(frame)
@@ -272,11 +272,11 @@ def main() -> int:
             fps = int(1 / numpy.mean(processing_times))
             processing_times = []
 
-        print(
-            f"P= {(processing_time * 1000):.0f}MS "
-            f"FPS= {fps:02d}, "
-            f"Gesture= {gesture}"
-        )
+        # print(
+        #     f"P= {(processing_time * 1000):.0f}MS "
+        #     f"FPS= {fps:02d}, "
+        #     f"Gesture= {gesture}"
+        # )
 
         time.sleep(processing_time * DELAY_MULTIPLIER)
 

@@ -15,19 +15,27 @@ IP = text_file_to_string("secrets/IP.txt")
 PORT = 1234
 
 
+def _receive_data(client_socket):
+    while True:
+        data = client_socket.recv(6)
+
+        a = list(struct.unpack(">4b2B", data))
+        print(f"Received: {a}")
+
+
 def _compress_and_send(client_socket, frame):
 
     params = [cv2.IMWRITE_JPEG_QUALITY, 50]
     data = cv2.imencode(".jpg", frame, params)[1].tobytes()
 
     # Print the size of the serialized frame in bytes
-    x, y, z = frame.shape
-    uncompressed_size = x * y * z
-    compressed_size = sys.getsizeof(data)
+    # x, y, z = frame.shape
+    # uncompressed_size = x * y * z
+    # compressed_size = sys.getsizeof(data)
 
-    print(f"Sending UCMP= {uncompressed_size} bytes", end=", ")
-    print(f"CMP= {compressed_size} bytes", end=", ")
-    print(f"Ratio= {uncompressed_size/compressed_size:.2f}", end=", ")
+    # print(f"Sending UCMP= {uncompressed_size} bytes", end=", ")
+    # print(f"CMP= {compressed_size} bytes", end=", ")
+    # print(f"Ratio= {uncompressed_size/compressed_size:.2f}", end=", ")
 
     size = len(data)
     client_socket.sendall(struct.pack(">L", size))
@@ -52,6 +60,11 @@ def _server_connection():
             print(f"Error: {e}")
             time.sleep(1)
             continue
+
+        receive_data_thread = threading.Thread(
+            target=_receive_data, args=(client_socket,), daemon=True
+        )
+        receive_data_thread.start()
 
         while client_socket:
             try:
