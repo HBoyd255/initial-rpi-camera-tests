@@ -27,25 +27,26 @@ if platform == "Linux":
             config = self.cam.create_video_configuration(
                 main={"size": (2304, 1296), "format": "RGB888"}
             )
-            # TODO do tests into best base resolution
+            # TODO Do tests into best base resolution.
 
             self.cam.configure(config)
             self.cam.start()
 
-        def array(self, format="bgr"):
-            full_res = self.cam.capture_array()
+        def array(self, format="bgr", lowres=True):
+            image = self.cam.capture_array()
 
-            # TODO do tests into best scaled resolution.
-            scaled_down = full_res[::4, ::4]
+            # TODO Do tests into best scaled resolution.
+            if lowres:
+                image = image[::4, ::4]
 
             if format.casefold() == "rgb":
-                scaled_down = cv2.cvtColor(scaled_down, cv2.COLOR_BGR2RGB)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-            return scaled_down
+            return image
 
-        def jpeg(self, quality=50):
+        def jpeg(self, quality=50, lowres=True):
 
-            frame = self.array()
+            frame = self.array(lowres=lowres)
 
             params = [cv2.IMWRITE_JPEG_QUALITY, quality]
 
@@ -72,14 +73,14 @@ elif platform.system() == "Windows":
             self.cam = cv2.VideoCapture(index)
 
         def array(self, format="bgr"):
-            _, full_res = self.cam.read()
+            _, image = self.cam.read()
 
             if format.casefold() == "rgb":
-                scaled_down = cv2.cvtColor(scaled_down, cv2.COLOR_BGR2RGB)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-            return scaled_down
+            return image
 
-        def jpeg(self, quality=50):
+        def jpeg(self, quality=50, lowres=True):
 
             frame = self.array()
 
@@ -88,5 +89,3 @@ elif platform.system() == "Windows":
             jpeg = cv2.imencode(".jpg", frame, params)[1].tobytes()
 
             return jpeg
-
-        
