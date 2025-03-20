@@ -2,7 +2,7 @@ import platform
 import cv2
 
 
-if platform == "Linux":
+if platform.system() == "Linux":
 
     import picamera2  # type: ignore
 
