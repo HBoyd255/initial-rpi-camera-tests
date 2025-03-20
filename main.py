@@ -2,10 +2,14 @@ import argparse
 import cv2
 import mediapipe
 import numpy
-import platform
 import time
+from modules.eye import Eye
 
 from modules.server_setup import start_server, send_to_server
+
+
+
+camera = Eye()
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -19,10 +23,6 @@ parser.add_argument(
     action="store_true",
     help="Makes the camera feed available on a local server.",
 )
-
-
-MIRROR_CAMERA = True
-
 
 mp_hands = mediapipe.solutions.hands
 mp_drawing = mediapipe.solutions.drawing_utils
@@ -68,65 +68,7 @@ GESTURES[0b11101] = "Pinky, Ring, Middle and Thumb"
 GESTURES[0b11110] = "American Four"
 GESTURES[0b11111] = "Halt"
 
-if platform.system() == "Windows":
 
-    # Temporary way to simulate the possessing delay of the pi
-    # When benchmarked against each other, the RPi 4B was 6 times slower at
-    # processing images than the Windows laptop I am using.
-    # DELAY_MULTIPLIER = 5
-    DELAY_MULTIPLIER = 0
-
-    cap = cv2.VideoCapture(0)
-
-    FRAME_WIDTH = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    FRAME_HEIGHT = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    def get_rgb_frame() -> numpy.ndarray:
-
-        success, bgr_frame = cap.read()
-
-        if not success:
-            pass
-            # TODO do something
-
-        # Flip the frame horizontally for a mirror effect
-        if MIRROR_CAMERA:
-            bgr_frame = cv2.flip(bgr_frame, 1)
-
-        rgb_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
-
-        return rgb_frame
-
-
-# If the platform is Linux, assume the program is running on the RPi.
-elif platform.system() == "Linux":
-    # Setup for the RPi
-
-    DELAY_MULTIPLIER = 0
-
-    import picamera2  # type: ignore
-    from libcamera import Transform  # type: ignore
-
-    pi_cam = picamera2.Picamera2()
-
-    # For a reason unknown to me, BGRFist88 gives images in RGB format, and RGB888
-    # gives BGR images. I may investigate this later, but for now it works just
-    # to request to opposite format.
-    config = pi_cam.create_video_configuration({"format": "BGR888"})
-    config["transform"] = Transform(hflip=not MIRROR_CAMERA, vflip=1)
-    pi_cam.configure(config)
-    pi_cam.start()
-
-    template_image = pi_cam.capture_array()
-
-    FRAME_HEIGHT = len(template_image)
-    FRAME_WIDTH = len(template_image[0])
-
-    del template_image
-
-    def get_rgb_frame() -> numpy.ndarray:
-
-        return pi_cam.capture_array()
 
 
 def finger_bend(A, B, C) -> float:
@@ -181,13 +123,16 @@ def process_image(frame: numpy.ndarray) -> tuple[str, numpy.ndarray]:
 
     results = hands.process(frame)
 
+    height = len(frame)
+    width = len(frame[0])
+
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
 
             landmarks = hand_landmarks.landmark
 
             coordinates = [
-                (int(landmark.x * FRAME_WIDTH), int(landmark.y * FRAME_HEIGHT))
+                (int(landmark.x * width), int(landmark.y * height))
                 for landmark in landmarks
             ]
 
@@ -252,7 +197,7 @@ def main() -> int:
 
         start_time = time.time()
 
-        frame = get_rgb_frame()
+        frame = camera.array("RGB")
 
         gesture, frame = process_image(frame)
 
@@ -277,8 +222,6 @@ def main() -> int:
         #     f"FPS= {fps:02d}, "
         #     f"Gesture= {gesture}"
         # )
-
-        time.sleep(processing_time * DELAY_MULTIPLIER)
 
 
 if __name__ == "__main__":

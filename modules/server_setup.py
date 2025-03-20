@@ -5,7 +5,7 @@ import threading
 import time
 import cv2
 from modules.file_utils import text_file_to_string
-from modules.serial_setup import send_over_serial
+# from modules.serial_setup import send_over_serial
 
 
 frame_queue = queue.Queue(maxsize=1)
@@ -21,9 +21,12 @@ def _receive_data(client_socket):
 
         a = list(struct.unpack(">4b2B", data))
 
-        speed = a[0:4]
+        print(f"data {a}")
 
-        send_over_serial(*speed)
+        speed = a[0:4]
+        servo_angle = a[4:7]
+
+        # send_over_serial(*speed, *servo_angle)
 
 
 def _compress_and_send(client_socket, frame):
