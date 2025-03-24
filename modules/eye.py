@@ -20,20 +20,20 @@ if platform.system() == "Linux":
                 # TODO Add error case.
                 return
 
-            self.cam = picamera2.Picamera2(camera_num=index)
+            self._cam = picamera2.Picamera2(camera_num=index)
 
             # For whatever reason, in this parameter RGB and BGR are flipped.
             # This module actually returns a BGR image.
-            config = self.cam.create_video_configuration(
+            config = self._cam.create_video_configuration(
                 main={"size": (2304, 1296), "format": "RGB888"}
             )
             # TODO Do tests into best base resolution.
 
-            self.cam.configure(config)
-            self.cam.start()
+            self._cam.configure(config)
+            self._cam.start()
 
         def array(self, format="bgr", lowres=True):
-            image = self.cam.capture_array()
+            image = self._cam.capture_array()
 
             # TODO Do tests into best scaled resolution.
             if lowres:
@@ -70,10 +70,10 @@ elif platform.system() == "Windows":
                 # TODO Add error case.
                 return
 
-            self.cam = cv2.VideoCapture(index)
+            self._cam = cv2.VideoCapture(index)
 
         def array(self, format="bgr"):
-            _, image = self.cam.read()
+            _, image = self._cam.read()
 
             if format.casefold() == "rgb":
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
