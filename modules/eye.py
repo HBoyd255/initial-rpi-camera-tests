@@ -5,6 +5,7 @@ import cv2
 if platform.system() == "Linux":
 
     import picamera2  # type: ignore
+    from libcamera import Transform  # type: ignore
 
     class Eye:
 
@@ -13,9 +14,9 @@ if platform.system() == "Linux":
             side = side.casefold()
 
             if side == "left" or side == "l":
-                index = 0
-            elif side == "right" or side == "r":
                 index = 1
+            elif side == "right" or side == "r":
+                index = 0
             else:
                 # TODO Add error case.
                 return
@@ -27,6 +28,8 @@ if platform.system() == "Linux":
             config = self._cam.create_video_configuration(
                 main={"size": (2304, 1296), "format": "RGB888"}
             )
+            config["transform"] = Transform(hflip=1, vflip=1)
+
             # TODO Do tests into best base resolution.
 
             self._cam.configure(config)
