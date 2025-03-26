@@ -2,11 +2,10 @@ import argparse
 import cv2
 import mediapipe
 import numpy
-import time
 from modules.eye import Eye
 
+from modules.fps import FPS
 from modules.server_setup import start_server, send_to_server
-
 
 
 camera = Eye()
@@ -67,8 +66,6 @@ GESTURES[0b11100] = "Pinky, Ring and Middle"
 GESTURES[0b11101] = "Pinky, Ring, Middle and Thumb"
 GESTURES[0b11110] = "American Four"
 GESTURES[0b11111] = "Halt"
-
-
 
 
 def finger_bend(A, B, C) -> float:
@@ -181,6 +178,9 @@ def process_image(frame: numpy.ndarray) -> tuple[str, numpy.ndarray]:
     return "NONE", frame
 
 
+fps_counter = FPS()
+
+
 def main() -> int:
 
     args = parser.parse_args()
@@ -188,14 +188,7 @@ def main() -> int:
     if args.server:
         start_server()
 
-    processing_time = 0
-    processing_times = []
-    fps = 0
-    frames_to_average = 10
-
     while True:
-
-        start_time = time.time()
 
         frame = camera.array("RGB")
 
@@ -208,20 +201,13 @@ def main() -> int:
         if args.server:
             send_to_server(frame)
 
-        end_time = time.time()
-        processing_time = end_time - start_time
+        fps_counter.tick()
 
-        processing_times.append(processing_time)
-
-        if len(processing_times) == frames_to_average:
-            fps = int(1 / numpy.mean(processing_times))
-            processing_times = []
-
-        # print(
-        #     f"P= {(processing_time * 1000):.0f}MS "
-        #     f"FPS= {fps:02d}, "
-        #     f"Gesture= {gesture}"
-        # )
+        print(
+            f"P= {(fps_counter.get_processing_time() * 1000):.0f}MS "
+            f"FPS= {fps_counter.get_fps()}, "
+            f"Gesture= {gesture}"
+        )
 
 
 if __name__ == "__main__":
