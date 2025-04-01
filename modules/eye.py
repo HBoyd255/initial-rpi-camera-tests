@@ -35,21 +35,24 @@ if platform.system() == "Linux":
             self._cam.configure(config)
             self._cam.start()
 
-        def array(self, format="bgr", lowres=True):
+        def array(self, format="bgr", res="low"):
             image = self._cam.capture_array()
 
             # TODO Do tests into best scaled resolution.
-            if lowres:
+            if res.casefold() == "low":
                 image = image[::4, ::4]
+
+            elif res.casefold() == "mid":
+                image = image[::2, ::2]
 
             if format.casefold() == "rgb":
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
             return image
 
-        def jpeg(self, quality=50, lowres=True):
+        def jpeg(self, quality=50, res="low"):
 
-            frame = self.array(lowres=lowres)
+            frame = self.array(res=res)
 
             params = [cv2.IMWRITE_JPEG_QUALITY, quality]
 
@@ -75,17 +78,24 @@ elif platform.system() == "Windows":
 
             self._cam = cv2.VideoCapture(index)
 
-        def array(self, format="bgr"):
+        def array(self, format="bgr", res="full"):
             _, image = self._cam.read()
+
+            # TODO Do tests into best scaled resolution.
+            if res.casefold() == "low":
+                image = image[::4, ::4]
+
+            elif res.casefold() == "mid":
+                image = image[::2, ::2]
 
             if format.casefold() == "rgb":
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
             return image
 
-        def jpeg(self, quality=50, lowres=True):
+        def jpeg(self, quality=50, res="full"):
 
-            frame = self.array()
+            frame = self.array(res=res)
 
             params = [cv2.IMWRITE_JPEG_QUALITY, quality]
 
