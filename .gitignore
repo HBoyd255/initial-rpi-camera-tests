@@ -12,6 +12,7 @@ __pycache__/
 *.jpg
 *.jpeg
 *.png
+*.pdf
 
 # Zip files
 *.zip
