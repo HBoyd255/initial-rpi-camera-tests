@@ -5,9 +5,6 @@ import numpy
 from modules.eye import Eye
 
 from modules.fps import FPS
-from modules.server_setup import start_server, send_to_server
-
-
 camera = Eye()
 
 parser = argparse.ArgumentParser()
@@ -15,12 +12,6 @@ parser.add_argument(
     "--headless",
     action="store_true",
     help="Runs the program without displaying the camera feed.",
-)
-
-parser.add_argument(
-    "--server",
-    action="store_true",
-    help="Makes the camera feed available on a local server.",
 )
 
 mp_hands = mediapipe.solutions.hands
@@ -185,9 +176,6 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    if args.server:
-        start_server()
-
     while True:
 
         frame = camera.array("RGB")
@@ -196,16 +184,14 @@ def main() -> int:
 
         # Check if headless mode is enabled
         if not args.headless:
-            show_rgb("Server Frame", frame)
+            show_rgb("Frame", frame)
 
-        if args.server:
-            send_to_server(frame)
 
         fps_counter.tick()
 
         print(
             f"P= {(fps_counter.get_processing_time() * 1000):.0f}MS "
-            f"FPS= {fps_counter.get_fps()}, "
+            f"FPS= {fps_counter.get_fps():.4}, "
             f"Gesture= {gesture}"
         )
 
