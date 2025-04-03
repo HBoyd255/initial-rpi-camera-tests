@@ -16,7 +16,16 @@ class FPS:
         self._last_call_time = 0.0
         self._update_time = 0.0
 
-    def tick(self):
+        self._simple_mode = False
+
+    def tick(self, force=False):
+
+        if self._simple_mode and not force:
+            raise Exception(
+                "FPS Error: Simple mode enabled by call to __str__"
+                ", unable to use .tick()"
+            )
+
         self._processing_time = time.time() - self._last_call_time
         self._last_call_time = time.time()
 
@@ -32,3 +41,12 @@ class FPS:
 
     def get_processing_time(self):
         return self._processing_time
+
+    def __str__(self):
+        self._simple_mode = True
+
+        self.tick(force=True)
+
+        fps_count = self.get_fps()
+
+        return f"FPS: {fps_count:.4}"
