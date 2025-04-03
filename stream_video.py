@@ -19,7 +19,7 @@ def generate(mode):
         while True:
 
             frame = eyes.joined_array()
-            params = [cv2.IMWRITE_JPEG_QUALITY, 50]
+            params = [cv2.IMWRITE_JPEG_QUALITY, 90]
             jpeg = cv2.imencode(".jpg", frame, params)[1].tobytes()
 
             yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg + b"\r\n"
@@ -28,7 +28,7 @@ def generate(mode):
         while True:
 
             frame = eyes.onion_array()
-            params = [cv2.IMWRITE_JPEG_QUALITY, 50]
+            params = [cv2.IMWRITE_JPEG_QUALITY, 90]
             jpeg = cv2.imencode(".jpg", frame, params)[1].tobytes()
 
             yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg + b"\r\n"

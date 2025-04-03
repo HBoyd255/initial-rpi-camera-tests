@@ -1,18 +1,14 @@
-import argparse
 import cv2
 import mediapipe
 import numpy
 from modules.eye import Eye
 
 from modules.fps import FPS
-camera = Eye()
+from modules.video import Video
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--headless",
-    action="store_true",
-    help="Runs the program without displaying the camera feed.",
-)
+
+camera = Eye()
+vid = Video()
 
 mp_hands = mediapipe.solutions.hands
 mp_drawing = mediapipe.solutions.drawing_utils
@@ -81,16 +77,6 @@ def finger_bend(A, B, C) -> float:
     return abs(degrees)
 
 
-def show_rgb(name: str, image: numpy.ndarray) -> None:
-
-    # Covert to BGR for displaying
-    BGR_frame = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-    cv2.imshow(name, BGR_frame)
-
-    cv2.waitKey(1)
-
-
 def is_pointed(landmarks: list, finger_index: int) -> bool:
 
     bend_threshold = 60
@@ -109,10 +95,13 @@ def is_pointed(landmarks: list, finger_index: int) -> bool:
 
 def process_image(frame: numpy.ndarray) -> tuple[str, numpy.ndarray]:
 
-    results = hands.process(frame)
+    # Convert to RGB
+    RGB_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    height = len(frame)
-    width = len(frame[0])
+    results = hands.process(RGB_frame)
+
+    height = len(RGB_frame)
+    width = len(RGB_frame[0])
 
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
@@ -125,7 +114,7 @@ def process_image(frame: numpy.ndarray) -> tuple[str, numpy.ndarray]:
             ]
 
             mp_drawing.draw_landmarks(
-                frame,
+                RGB_frame,
                 hand_landmarks,
                 mp_hands.HAND_CONNECTIONS,
                 mp_drawing_styles.get_default_hand_landmarks_style(),
@@ -141,7 +130,7 @@ def process_image(frame: numpy.ndarray) -> tuple[str, numpy.ndarray]:
                 knuckle_indexes = [2, 5, 9, 13, 17]
 
                 cv2.circle(
-                    frame,
+                    RGB_frame,
                     coordinates[knuckle_indexes[x]],
                     10,
                     (
@@ -153,7 +142,7 @@ def process_image(frame: numpy.ndarray) -> tuple[str, numpy.ndarray]:
                 )
 
             cv2.putText(
-                frame,
+                RGB_frame,
                 GESTURES[gesture_index],
                 coordinates[0],
                 cv2.FONT_HERSHEY_TRIPLEX,
@@ -162,9 +151,9 @@ def process_image(frame: numpy.ndarray) -> tuple[str, numpy.ndarray]:
                 2,
             )
 
-        # print(f"detected gesture: {GESTURES[gesture_index]}")
+        BGR_frame = cv2.cvtColor(RGB_frame, cv2.COLOR_RGB2BGR)
 
-        return GESTURES[gesture_index], frame
+        return GESTURES[gesture_index], BGR_frame
 
     return "NONE", frame
 
@@ -174,18 +163,13 @@ fps_counter = FPS()
 
 def main() -> int:
 
-    args = parser.parse_args()
-
     while True:
 
-        frame = camera.array("RGB")
+        frame = camera.array()
 
         gesture, frame = process_image(frame)
 
-        # Check if headless mode is enabled
-        if not args.headless:
-            show_rgb("Frame", frame)
-
+        vid.show("Frame", frame)
 
         fps_counter.tick()
 
@@ -198,7 +182,6 @@ def main() -> int:
 
 if __name__ == "__main__":
     main()
-
 
 # Colour formats
 

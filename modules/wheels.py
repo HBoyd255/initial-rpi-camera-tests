@@ -52,6 +52,11 @@ class Wheels:
 
     def send(self, fl_speed, fr_speed, bl_speed, br_speed):
 
+        fl_speed = int(fl_speed)
+        fr_speed = int(fr_speed)
+        bl_speed = int(bl_speed)
+        br_speed = int(br_speed)
+
         if not self._mode == "quiet":
             print(
                 f"Attempting to send {fl_speed, fr_speed, bl_speed, br_speed}."
