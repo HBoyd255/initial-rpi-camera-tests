@@ -1,7 +1,7 @@
 import os
 import cv2
 import numpy
-from threading import Thread
+from threading import Thread, Lock
 from flask import Flask, Response
 
 
@@ -23,6 +23,8 @@ class Video:
         self._latest_frame = None
         self._name_indexes = {}
 
+        self._frame_lock = Lock()
+
         self._app = Flask(__name__)
         self._app.add_url_rule("/video", "video", self._video)
 
@@ -37,7 +39,11 @@ class Video:
         while True:
 
             try:
-                _, jpeg = cv2.imencode(".jpg", self._latest_frame, self._PARAMS)
+
+                with self._frame_lock:
+                    frame = self._latest_frame
+
+                _, jpeg = cv2.imencode(".jpg", frame, self._PARAMS)
 
                 data = (
                     b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
@@ -89,7 +95,8 @@ class Video:
             offset_x : offset_x + self._FRAME_SHAPE["w"],
         ] = frame
 
-        self._latest_frame = numpy.copy(self._canvas)
+        with self._frame_lock:
+            self._latest_frame = numpy.copy(self._canvas)
 
         if not self._display_available:
             return
