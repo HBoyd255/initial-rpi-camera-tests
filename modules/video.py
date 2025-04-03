@@ -1,9 +1,8 @@
 import os
-from queue import Queue
-from threading import Thread
 import cv2
-from flask import Flask, Response
 import numpy
+from threading import Thread
+from flask import Flask, Response
 
 
 class Video:
@@ -21,7 +20,7 @@ class Video:
             numpy.uint8,
         )
 
-        self._frame_queue = Queue(maxsize=6)
+        self._latest_frame = None
         self._name_indexes = {}
 
         self._app = Flask(__name__)
@@ -38,10 +37,15 @@ class Video:
         while True:
 
             try:
-                frame = self._frame_queue.get_nowait()
-                jpeg = cv2.imencode(".jpg", frame, self._PARAMS)[1].tobytes()
+                _, jpeg = cv2.imencode(".jpg", self._latest_frame, self._PARAMS)
 
-                yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg + b"\r\n"
+                data = (
+                    b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
+                    + jpeg.tobytes()
+                    + b"\r\n"
+                )
+
+                yield data
             except:
                 continue
 
@@ -85,12 +89,7 @@ class Video:
             offset_x : offset_x + self._FRAME_SHAPE["w"],
         ] = frame
 
-        try:
-            self._frame_queue.put_nowait(self._canvas)
-        except:
-            # Replace old frame with new one.
-            self._frame_queue.get_nowait()
-            self._frame_queue.put_nowait(self._canvas)
+        self._latest_frame = numpy.copy(self._canvas)
 
         if not self._display_available:
             return
