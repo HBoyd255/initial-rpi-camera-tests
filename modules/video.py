@@ -1,4 +1,5 @@
 import os
+import time
 import cv2
 import numpy
 from threading import Thread, Lock
@@ -34,9 +35,15 @@ class Video:
         )
         self._server_thread.start()
 
+        self._last_sent_time = time.time()
+
     def _generate(self):
 
         while True:
+
+            # Limit to 60 fps streaming.
+            if time.time() - self._last_sent_time < (1 / 60):
+                continue
 
             try:
 
@@ -51,8 +58,11 @@ class Video:
                     + b"\r\n"
                 )
 
+                self._last_sent_time = time.time()
                 yield data
-            except:
+
+            except Exception as e:
+                print(e)
                 continue
 
     def _video(self):
