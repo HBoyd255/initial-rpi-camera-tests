@@ -58,6 +58,8 @@ class Video:
                     + jpeg.tobytes()
                     + b"\r\n"
                 )
+
+                self._updated_canvas = False
                 yield data
 
             except Exception as e:
