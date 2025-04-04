@@ -7,7 +7,7 @@ from flask import Flask, Response
 
 class Video:
 
-    _PARAMS = [cv2.IMWRITE_JPEG_QUALITY, 10]
+    _PARAMS = [cv2.IMWRITE_JPEG_QUALITY, 50]
 
     def __init__(self, local=False):
 
@@ -75,31 +75,31 @@ class Video:
 
     def show(self, name, frame):
 
-        if not self._local:
+        if self._frame_height is None or self._frame_width is None:
+            self._frame_width = frame.shape[1]
+            self._frame_height = frame.shape[0]
 
-            if self._frame_height is None or self._frame_width is None:
-                self._frame_width = frame.shape[1]
-                self._frame_height = frame.shape[0]
+        # Normalise frame.
+        frame = numpy.array(frame, dtype=numpy.uint8)
+
+        # Add frame name to frame.
+        cv2.putText(
+            frame,
+            f"{name} ({self._frame_width} x {self._frame_height})",
+            (15, 30),
+            cv2.FONT_HERSHEY_TRIPLEX,
+            1,
+            (0, 0, 255),
+            2,
+        )
+
+        if not self._local:
 
             if self._canvas is None:
                 self._canvas = numpy.zeros(
                     (self._frame_height * 2, self._frame_width * 3, 3),
                     numpy.uint8,
                 )
-
-            # Normalise frame.
-            frame = numpy.array(frame, dtype=numpy.uint8)
-
-            # Add frame name to frame.
-            cv2.putText(
-                frame,
-                f"{name} ({self._frame_width} x {self._frame_height})",
-                (15, 30),
-                cv2.FONT_HERSHEY_TRIPLEX,
-                1,
-                (0, 0, 255),
-                2,
-            )
 
             # Get the index from the frame name.
             if not name in self._name_indexes:
