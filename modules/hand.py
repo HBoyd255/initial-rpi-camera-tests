@@ -48,9 +48,12 @@ class Hand:
 
         # In between the wrist and the index knuckle.
         # return (self.landmarks[0] + self.landmarks[9]) / 2
-        
-        # Knuckle of the pointer finger
-        return self.landmarks[5]
+
+        # # Knuckle of the pointer finger
+        # return self.landmarks[5]
+
+        # Wrist
+        return self.landmarks[0]
 
     def draw(self, frame: numpy.ndarray, small=False):
 

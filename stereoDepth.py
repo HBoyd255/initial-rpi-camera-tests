@@ -4,7 +4,7 @@ import numpy
 import mediapipe
 from modules.eye import Eye
 from modules.fps import FPS
-from modules.hand import create_hands_list
+from modules.hand import Hand
 from queue import Queue
 from threading import Thread
 
@@ -60,12 +60,11 @@ def capture_hand(side: str, queue: Queue):
 
         frame = eye.array("RGB")
         results = hands.process(frame)
-        hands_list = create_hands_list(results)
 
-        detected_hand = None
+        detected_hand = Hand(results)
 
-        if len(hands_list) > 0:
-            detected_hand = hands_list[0]
+        if not detected_hand.is_seen():
+            detected_hand = None
 
         queue.put(FrameStruct(frame, detected_hand))
 
@@ -114,7 +113,7 @@ def show():
             rx = right_hand.landmarks[8][0]
             ry = right_hand.landmarks[0][1]
 
-            # if ly < 0.6 and ry < 0.6:
+            # if ly < 0.5 and ry < 0.5:
             #     continue
 
             wrist_distance = distances[0]

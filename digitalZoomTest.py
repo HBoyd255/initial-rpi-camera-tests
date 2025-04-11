@@ -147,7 +147,7 @@ while True:
 
         hand_centre = hand_from_zoom.get_centre()
 
-        cross(zoom_frame, hand_centre)
+        # cross(zoom_frame, hand_centre)
 
         centre_error = hand_centre - (0.5, 0.5)
 
@@ -161,13 +161,38 @@ while True:
             zoom_coords[0] = 1 / 8
 
         if zoom_coords[0] > 7 / 8:
-            zoom_coords[0] = 3 / 4
+            zoom_coords[0] = 7 / 8
 
         if zoom_coords[1] < 1 / 8:
-            zoom_coords[1] = 1 / 8
+            zoom_coords[1] = 7 / 8
 
         if zoom_coords[1] > 7 / 8:
-            zoom_coords[1] = 3 / 4
+            zoom_coords[1] = 7 / 8
+
+        y_values = hand_from_zoom.landmarks[:, 1]
+        x_values = hand_from_zoom.landmarks[:, 0]
+
+        max_y = numpy.max(y_values)
+        min_y = numpy.min(y_values)
+
+        max_x = numpy.max(x_values)
+        min_x = numpy.min(x_values)
+
+        max_ = numpy.array([max_x, max_y])
+        min_ = numpy.array([min_x, min_y])
+
+        range_ = max_ - min_
+
+        max_span = numpy.max(range_)
+
+        #         cross(zoom_frame, max_)
+        #         cross(zoom_frame, min_)
+        #
+        #         print(range_)
+
+        if max_span > 0.8:
+            using_zoom = False
+            continue
 
         localise = numpy.copy(full_thumb)
 
@@ -202,27 +227,13 @@ while True:
         if zoom_coords[0] < 1 / 8:
             zoom_coords[0] = 1 / 8
 
-        if zoom_coords[0] > 7 / 8:
-            zoom_coords[0] = 3 / 4
-
         if zoom_coords[1] < 1 / 8:
             zoom_coords[1] = 1 / 8
 
+        if zoom_coords[0] > 7 / 8:
+            zoom_coords[0] = 7 / 8
+
         if zoom_coords[1] > 7 / 8:
-            zoom_coords[1] = 3 / 4
+            zoom_coords[1] = 7 / 8
 
     vid.show("Pose Frame", pose_annotated)
-    vid.show("Hand From Zoon Frame", hand_from_zoom_frame)
-
-#
-#     vid.show("Zoom Frame", zoom_frame)
-#
-
-#
-#     vid.show("localise", localise)
-
-#     if REFRAME_ZOOM:
-#
-#
-#
-#         vid.show("pose", annotated_pose_frame)
