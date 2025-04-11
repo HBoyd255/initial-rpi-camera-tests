@@ -6,7 +6,11 @@ class Hand:
 
     def __init__(self, results):
 
-        self._seen = results.multi_hand_landmarks is not None
+        if results is not None:
+            self._seen = results.multi_hand_landmarks is not None
+
+        else:
+            self._seen = False
 
         if not self._seen:
             self._is_left = False
@@ -47,13 +51,13 @@ class Hand:
             raise Exception("No hands seen")
 
         # In between the wrist and the index knuckle.
-        # return (self.landmarks[0] + self.landmarks[9]) / 2
+        return (self.landmarks[0] + self.landmarks[9]) / 2
 
         # # Knuckle of the pointer finger
         # return self.landmarks[5]
 
         # Wrist
-        return self.landmarks[0]
+        # return self.landmarks[0]
 
     def draw(self, frame: numpy.ndarray, small=False):
 
