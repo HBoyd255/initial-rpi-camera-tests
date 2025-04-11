@@ -1,4 +1,5 @@
 import os
+import time
 import cv2
 import numpy
 from threading import Thread, Lock
@@ -42,6 +43,9 @@ class Video:
     def _generate(self):
 
         while True:
+
+            # Add a slight delay to avoid this thread hogging the processor.
+            time.sleep(0.01)
 
             try:
 
