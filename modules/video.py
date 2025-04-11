@@ -75,7 +75,7 @@ class Video:
             },
         )
 
-    def show(self, name, frame):
+    def show(self, name, frame, second_row_text=None):
 
         if self._frame_height is None or self._frame_width is None:
             self._frame_width = frame.shape[1]
@@ -94,6 +94,16 @@ class Video:
             (0, 0, 255),
             2,
         )
+        if second_row_text is not None:
+            cv2.putText(
+                frame,
+                second_row_text,
+                (15, 60),
+                cv2.FONT_HERSHEY_TRIPLEX,
+                1,
+                (0, 0, 255),
+                2,
+            )
 
         if not self._local:
 

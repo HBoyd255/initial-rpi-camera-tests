@@ -4,47 +4,83 @@ import cv2
 
 class Hand:
 
-    def __init__(self, landmarks, is_left):
+    def __init__(self, results):
 
-        self.is_left = is_left
-        self.landmarks = landmarks
+        self._seen = results.multi_hand_landmarks is not None
 
-        self.angle_rad = 0.0
-        self.gesture = "Unknown"
+        if not self._seen:
+            self._is_left = False
+            self.landmarks = numpy.zeros((21, 2), numpy.float64)
+
+            return
+
+        self._is_left = (
+            results.multi_handedness[0].classification[0].label.casefold()
+            == "left"
+        )
+
+        self.landmarks = numpy.array(
+            [
+                (landmark.x, landmark.y)
+                for landmark in results.multi_hand_landmarks[0].landmark
+            ]
+        )
+
+        # self.angle_rad = 0.0
+        # self.gesture = "Unknown"
+
+    def is_seen(self):
+        return self._seen
 
     def __str__(self):
-        if self.is_left:
+
+        if not self.is_seen():
+            return "No Hand Seen."
+
+        if self._is_left:
             return "Left Hand"
         return "Right Hand"
 
-    def draw(self, frame: numpy.ndarray):
+    def get_centre(self):
 
-        height = len(frame)
-        width = len(frame[0])
+        if not self.is_seen():
+            raise Exception("No hands seen")
+
+        # In between the wrist and the index knuckle.
+        # return (self.landmarks[0] + self.landmarks[9]) / 2
+        
+        # Knuckle of the pointer finger
+        return self.landmarks[5]
+
+    def draw(self, frame: numpy.ndarray, small=False):
+
+        drawing_frame = numpy.copy(frame)
+
+        if not self.is_seen():
+            return drawing_frame
+
+        height = len(drawing_frame)
+        width = len(drawing_frame[0])
 
         pixel_coords = [
             (int(coord[0] * width), int(coord[1] * height))
             for coord in self.landmarks
         ]
 
-        white = (255, 255, 255)
-        black = (0, 0, 0)
-        colour3 = (255, 0, 0)
+        RED = (0, 0, 255)
+
+        if small:
+            width = 1
+        else:
+            width = 3
 
         def line(p1_index: int, p2_index: int):
             cv2.line(
-                frame,
+                drawing_frame,
                 pixel_coords[p1_index],
                 pixel_coords[p2_index],
-                black,
-                3,
-            )
-            cv2.line(
-                frame,
-                pixel_coords[p1_index],
-                pixel_coords[p2_index],
-                white,
-                2,
+                RED,
+                width,
             )
 
         # Fingers
@@ -61,38 +97,4 @@ class Hand:
         line(9, 13)
         line(13, 17)
 
-        for x in range(21):
-            cv2.circle(frame, pixel_coords[x], 4, white, -1)
-            cv2.circle(frame, pixel_coords[x], 5, black, 1)
-
-
-def create_hands_list(results):
-
-    if not results.multi_hand_landmarks:
-        return []
-
-    hand_count = len(results.multi_hand_landmarks)
-
-    is_left_list = [
-        handedness.classification[0].label.casefold() == "left"
-        for handedness in results.multi_handedness
-    ]
-
-    landmark_lists = results.multi_hand_landmarks
-
-    hand_list = []
-
-    for x in range(hand_count):
-
-        landmarks = numpy.array(
-            [
-                (landmark.x, landmark.y)
-                for landmark in landmark_lists[x].landmark
-            ]
-        )
-
-        hand = Hand(landmarks, is_left_list[x])
-
-        hand_list.append(hand)
-
-    return hand_list
+        return drawing_frame
