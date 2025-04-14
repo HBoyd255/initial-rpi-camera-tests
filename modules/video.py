@@ -1,4 +1,5 @@
 import os
+import platform
 import time
 import cv2
 import numpy
@@ -15,7 +16,10 @@ class Video:
         self._frame_height = None
         self._frame_width = None
 
-        self._display_available = "DISPLAY" in os.environ
+        has_linux_display = "DISPLAY" in os.environ
+        is_windows = platform.system() == "Windows"
+
+        self._display_available = has_linux_display or is_windows
 
         self._local = local
 

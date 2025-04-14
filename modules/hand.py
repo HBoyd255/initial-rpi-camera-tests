@@ -4,7 +4,7 @@ import cv2
 
 class Hand:
 
-    def __init__(self, results):
+    def __init__(self, results, seen_from_zoom=False):
 
         if results is not None:
             self._seen = results.multi_hand_landmarks is not None
@@ -29,6 +29,8 @@ class Hand:
                 for landmark in results.multi_hand_landmarks[0].landmark
             ]
         )
+
+        self._seen_from_zoom = seen_from_zoom
 
         # self.angle_rad = 0.0
         # self.gesture = "Unknown"
@@ -74,7 +76,11 @@ class Hand:
             for coord in self.landmarks
         ]
 
-        RED = (0, 0, 255)
+        # Red
+        colour = (0, 0, 255)
+
+        if self._seen_from_zoom:
+            colour = (0, 255, 0)
 
         if small:
             width = 1
@@ -86,7 +92,7 @@ class Hand:
                 drawing_frame,
                 pixel_coords[p1_index],
                 pixel_coords[p2_index],
-                RED,
+                colour,
                 width,
             )
 
