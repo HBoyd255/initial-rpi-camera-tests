@@ -5,24 +5,6 @@ import numpy
 from modules.hand import Hand
 from modules.body import Body
 
-hand_mp_full = mediapipe.solutions.hands.Hands(
-    static_image_mode=False,
-    max_num_hands=1,
-    min_detection_confidence=0.3,
-    min_tracking_confidence=0.7,
-)
-
-hand_mp_zoom = mediapipe.solutions.hands.Hands(
-    static_image_mode=False,
-    max_num_hands=1,
-    min_detection_confidence=0.3,
-    min_tracking_confidence=0.7,
-)
-
-pose_mp = mediapipe.solutions.pose.Pose(
-    static_image_mode=True,
-    min_detection_confidence=0.5,
-)
 
 
 LEFT_INDEX = 15
@@ -66,9 +48,28 @@ class Zoom:
 
         self._left_is_dominant = True
 
+        self._hand_mp_full = mediapipe.solutions.hands.Hands(
+            static_image_mode=False,
+            max_num_hands=1,
+            min_detection_confidence=0.3,
+            min_tracking_confidence=0.7,
+        )
+
+        self._hand_mp_zoom = mediapipe.solutions.hands.Hands(
+            static_image_mode=False,
+            max_num_hands=1,
+            min_detection_confidence=0.3,
+            min_tracking_confidence=0.7,
+        )
+
+        self._pose_mp = mediapipe.solutions.pose.Pose(
+            static_image_mode=True,
+            min_detection_confidence=0.5,
+        )
+
     def get_from_fov(self, frame_th) -> Hand:
 
-        full_hand_results = hand_mp_full.process(
+        full_hand_results = self._hand_mp_full.process(
             cv2.cvtColor(frame_th, cv2.COLOR_BGR2RGB)
         )
 
@@ -89,7 +90,7 @@ class Zoom:
             off_x - bound_x : off_x + bound_x,
         ]
 
-        zoom_hand_results = hand_mp_zoom.process(
+        zoom_hand_results = self._hand_mp_zoom.process(
             cv2.cvtColor(zoom_frame, cv2.COLOR_BGR2RGB)
         )
 
@@ -111,7 +112,7 @@ class Zoom:
         return hand_from_zoom
 
     def _get_pose(self, frame_th) -> Body:
-        pose_results = pose_mp.process(
+        pose_results = self._pose_mp.process(
             cv2.cvtColor(frame_th, cv2.COLOR_BGR2RGB)
         )
         body = Body(pose_results)
