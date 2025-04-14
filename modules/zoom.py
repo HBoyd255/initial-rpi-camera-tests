@@ -72,7 +72,7 @@ class Zoom:
             cv2.cvtColor(frame_th, cv2.COLOR_BGR2RGB)
         )
 
-        hand_from_full = Hand(full_hand_results)
+        hand_from_full = Hand(full_hand_results, seen_from_zoom=False)
 
         return hand_from_full
 
@@ -93,7 +93,7 @@ class Zoom:
             cv2.cvtColor(zoom_frame, cv2.COLOR_BGR2RGB)
         )
 
-        hand_from_zoom = Hand(zoom_hand_results)
+        hand_from_zoom = Hand(zoom_hand_results, seen_from_zoom=True)
 
         if hand_from_zoom.is_seen():
 
@@ -190,6 +190,8 @@ class Zoom:
             hand = self.get_from_fov(full_fov_thumb)
 
             if hand.is_seen():
+
+                self._recenter_from_hand(hand)
 
                 if self._vid is not None:
 
