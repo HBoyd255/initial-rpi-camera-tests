@@ -78,6 +78,10 @@ elif platform.system() == "Windows":
 
             self._cam = cv2.VideoCapture(index)
 
+            # Set to full resolution.
+            self._cam.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
+            self._cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
+
         def array(self, format="bgr", res="full"):
             _, image = self._cam.read()
 
