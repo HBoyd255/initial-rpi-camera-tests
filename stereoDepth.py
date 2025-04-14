@@ -11,6 +11,7 @@ from threading import Thread
 from modules.stereoHands import StereoHandPair
 from modules.wheels import Wheels
 from modules.video import Video
+from modules.zoom import Zoom
 
 mp_hands = mediapipe.solutions.hands
 mp_drawing = mediapipe.solutions.drawing_utils
@@ -49,33 +50,28 @@ def capture_hand(side: str, queue: Queue):
 
     eye = Eye(side)
 
-    hands = mp_hands.Hands(
-        static_image_mode=False,
-        max_num_hands=1,
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5,
-    )
-
+    hand_finder = Zoom()
     while True:
 
-        frame = eye.array("RGB")
-        results = hands.process(frame)
+        frame = eye.array(res="full")
 
-        detected_hand = Hand(results)
+        hand = hand_finder.get_hand(frame)
 
-        if not detected_hand.is_seen():
-            detected_hand = None
+        frame = frame[::4, ::4]
 
-        queue.put(FrameStruct(frame, detected_hand))
+        queue.put(FrameStruct(frame, hand))
+
+
+fps = FPS()
 
 
 def show():
 
-    fps = FPS()
-
     while True:
 
         if not left_queue.empty() and not right_queue.empty():
+
+            print(str(fps), end=" ")
 
             left_frame, left_hand = left_queue.get()
             right_frame, right_hand = right_queue.get()
@@ -83,15 +79,13 @@ def show():
             left_feed = numpy.copy(left_frame)
             right_feed = numpy.copy(right_frame)
 
-            if left_hand:
-                left_hand.draw(left_feed)
-            if right_hand:
-                right_hand.draw(right_feed)
+            if left_hand.is_seen():
+                left_feed = left_hand.draw(left_feed)
+            if right_hand.is_seen():
+                right_feed = right_hand.draw(right_feed)
 
-            BGR_frame = cv2.cvtColor(left_feed, cv2.COLOR_BGR2RGB)
-            vid.show("Left Feed", BGR_frame)
-            BGR_frame = cv2.cvtColor(right_feed, cv2.COLOR_BGR2RGB)
-            vid.show("Right Feed", BGR_frame)
+            vid.show("Left Feed", left_feed)
+            vid.show("Right Feed", right_feed)
 
             if not (left_hand and right_hand):
                 continue
@@ -102,106 +96,120 @@ def show():
 
             disparities = pair.get_disparities()
 
-            distances = [K / d for d in disparities]
+            distances = [K / d * 1.3 for d in disparities]
 
-            BGR_frame = cv2.cvtColor(left_feed, cv2.COLOR_BGR2RGB)
-            vid.show("Disparity", BGR_frame)
+            vid.show("Disparity", left_feed)
 
-            lx = left_hand.landmarks[8][0]
-            ly = left_hand.landmarks[0][1]
+            print(f"Wrist = {distances[0]:.4}, Index = {distances[8]:.4}")
 
-            rx = right_hand.landmarks[8][0]
-            ry = right_hand.landmarks[0][1]
+            print(f"Wrist = {distances[0]:.4}, Index = {distances[8]:.4}")
 
-            # if ly < 0.5 and ry < 0.5:
-            #     continue
+            canv = numpy.zeros_like(left_feed)
 
-            wrist_distance = distances[0]
-
-            # print(f"Wrist = {wrist_distance:.4}, Index = {distances[8]:.4}")
-
-            vertical_error = wrist_distance - 100
-            vertical_error = vertical_error * 2
-
-            MAX_VAL = 100
-
-            if vertical_error > MAX_VAL:
-                vertical_error = MAX_VAL
-
-            if vertical_error < -MAX_VAL:
-                vertical_error = -MAX_VAL
-
-            horizontal_error = 0.5 - rx
-
-            horizontal_error *= 500
-
-            if horizontal_error > MAX_VAL:
-                horizontal_error = MAX_VAL
-
-            if horizontal_error < -MAX_VAL:
-                horizontal_error = -MAX_VAL
-
-            vertical_error = int(vertical_error)
-            horizontal_error = int(horizontal_error)
-
-            # if abs(horizontal_error) < 100:
-            r = numpy.random.randint(0, 100)
-
-            sine = -1
-
-            if horizontal_error > 0:
-                sine = 1
-
-            print(f"r = {r}, " f"h = {horizontal_error} ", end="")
-
-            if abs(horizontal_error) > r:
-                horizontal_error = 80 * sine
-            else:
-                horizontal_error = 0
-
-            # -------------------
-
-            r = numpy.random.randint(0, 100)
-
-            sine = -1
-
-            if vertical_error > 0:
-                sine = 1
-
-            print(f"r = {r}, " f"v = {vertical_error} ", end="")
-
-            if abs(vertical_error) > r:
-                vertical_error = 100 * sine
-            else:
-                vertical_error = 0
-
-            print(
-                f"Wrist = {wrist_distance:.4}, "
-                f"vertical_error = {vertical_error} "
-                f"horizontal_error = {horizontal_error}"
+            cv2.putText(
+                canv,
+                f"Wrist = {distances[0]:.4}",
+                (30, 100),
+                cv2.FONT_HERSHEY_TRIPLEX,
+                2,
+                (0, 0, 255),
+                2,
+            )
+            cv2.putText(
+                canv,
+                f"Index = {distances[8]:.4}",
+                (30, 200),
+                cv2.FONT_HERSHEY_TRIPLEX,
+                2,
+                (0, 0, 255),
+                2,
             )
 
-            speeds = numpy.zeros(4, dtype=int)
+            vid.show("", canv)
 
-            speeds += [
-                vertical_error,
-                vertical_error,
-                vertical_error,
-                vertical_error,
-            ]
 
-            speeds += [
-                -horizontal_error,
-                horizontal_error,
-                -horizontal_error,
-                horizontal_error,
-            ]
-
-            speeds = normalize_speeds(speeds)
-
-            wheel_control.send(*speeds)
-
-        cv2.waitKey(1)
+#             vertical_error = wrist_distance - 100
+#             vertical_error = vertical_error * 2
+#
+#             MAX_VAL = 100
+#
+#             if vertical_error > MAX_VAL:
+#                 vertical_error = MAX_VAL
+#
+#             if vertical_error < -MAX_VAL:
+#                 vertical_error = -MAX_VAL
+#
+#             horizontal_error = 0.5 - rx
+#
+#             horizontal_error *= 500
+#
+#             if horizontal_error > MAX_VAL:
+#                 horizontal_error = MAX_VAL
+#
+#             if horizontal_error < -MAX_VAL:
+#                 horizontal_error = -MAX_VAL
+#
+#             vertical_error = int(vertical_error)
+#             horizontal_error = int(horizontal_error)
+#
+#             # if abs(horizontal_error) < 100:
+#             r = numpy.random.randint(0, 100)
+#
+#             sine = -1
+#
+#             if horizontal_error > 0:
+#                 sine = 1
+#
+#             print(f"r = {r}, " f"h = {horizontal_error} ", end="")
+#
+#             if abs(horizontal_error) > r:
+#                 horizontal_error = 80 * sine
+#             else:
+#                 horizontal_error = 0
+#
+#             # -------------------
+#
+#             r = numpy.random.randint(0, 100)
+#
+#             sine = -1
+#
+#             if vertical_error > 0:
+#                 sine = 1
+#
+#             print(f"r = {r}, " f"v = {vertical_error} ", end="")
+#
+#             if abs(vertical_error) > r:
+#                 vertical_error = 100 * sine
+#             else:
+#                 vertical_error = 0
+#
+#             print(
+#                 f"Wrist = {wrist_distance:.4}, "
+#                 f"vertical_error = {vertical_error} "
+#                 f"horizontal_error = {horizontal_error}"
+#             )
+#
+#             speeds = numpy.zeros(4, dtype=int)
+#
+#             speeds += [
+#                 vertical_error,
+#                 vertical_error,
+#                 vertical_error,
+#                 vertical_error,
+#             ]
+#
+#             speeds += [
+#                 -horizontal_error,
+#                 horizontal_error,
+#                 -horizontal_error,
+#                 horizontal_error,
+#             ]
+#
+#             speeds = normalize_speeds(speeds)
+#
+#             wheel_control.send(*speeds)
+#
+#         cv2.waitKey(1)
 
 
 if __name__ == "__main__":
