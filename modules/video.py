@@ -11,7 +11,9 @@ class Video:
 
     _PARAMS = [cv2.IMWRITE_JPEG_QUALITY, 50]
 
-    def __init__(self, local=False):
+    def __init__(self, local=False, canvas_framing=(3, 2)):
+
+        self._canvas_framing = canvas_framing
 
         self._frame_height = None
         self._frame_width = None
@@ -117,7 +119,11 @@ class Video:
 
             if self._canvas is None:
                 self._canvas = numpy.zeros(
-                    (self._frame_height * 2, self._frame_width * 3, 3),
+                    (
+                        self._frame_height * self._canvas_framing[1],
+                        self._frame_width * self._canvas_framing[0],
+                        3,
+                    ),
                     numpy.uint8,
                 )
 
@@ -128,8 +134,8 @@ class Video:
             index = self._name_indexes[name]
 
             # Calculate the position on the canvas of the frame.
-            offset_x = self._frame_width * (index % 3)
-            offset_y = self._frame_height * (index // 3)
+            offset_x = self._frame_width * (index % self._canvas_framing[0])
+            offset_y = self._frame_height * (index // self._canvas_framing[0])
 
             self._canvas[
                 offset_y : offset_y + self._frame_height,
