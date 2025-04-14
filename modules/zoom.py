@@ -6,7 +6,6 @@ from modules.hand import Hand
 from modules.body import Body
 
 
-
 LEFT_INDEX = 15
 RIGHT_INDEX = 16
 
@@ -36,7 +35,7 @@ def draw_zoom_outline(frame, offset):
 
 class Zoom:
 
-    def __init__(self, video=None):
+    def __init__(self, video=None, continuous=True):
 
         self._vid = video
 
@@ -49,14 +48,14 @@ class Zoom:
         self._left_is_dominant = True
 
         self._hand_mp_full = mediapipe.solutions.hands.Hands(
-            static_image_mode=False,
+            static_image_mode=(not continuous),
             max_num_hands=1,
             min_detection_confidence=0.3,
             min_tracking_confidence=0.7,
         )
 
         self._hand_mp_zoom = mediapipe.solutions.hands.Hands(
-            static_image_mode=False,
+            static_image_mode=(not continuous),
             max_num_hands=1,
             min_detection_confidence=0.3,
             min_tracking_confidence=0.7,
