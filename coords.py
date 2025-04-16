@@ -24,7 +24,17 @@ vid = Video()
 BASELINE_M = 0.096
 FOCAL_LENGTH_PX = 1964
 FRAME_WIDTH_PX = 4608
-distCalc = DistanceCalculator(BASELINE_M, FOCAL_LENGTH_PX, FRAME_WIDTH_PX)
+
+HORIZONTAL_FOV_DEGREES = 102
+VERTICAL_FOV_DEGREES = 67
+
+distCalc = DistanceCalculator(
+    BASELINE_M,
+    FOCAL_LENGTH_PX,
+    FRAME_WIDTH_PX,
+    HORIZONTAL_FOV_DEGREES,
+    VERTICAL_FOV_DEGREES,
+)
 
 
 def capture_hand(side: str, queue: Queue):
@@ -55,109 +65,19 @@ def show():
             left_feed = numpy.copy(left_frame)
             right_feed = numpy.copy(right_frame)
 
-            if left_hand.is_seen():
-                left_feed = left_hand.draw(left_feed)
-            if right_hand.is_seen():
-                right_feed = right_hand.draw(right_feed)
+            left_feed = left_hand.draw(left_feed)
+            right_feed = right_hand.draw(right_feed)
 
             vid.show("Left Feed", left_feed)
             vid.show("Right Feed", right_feed)
 
-            if not (left_hand and right_hand):
+            
+            if not (left_hand.is_seen() and right_hand.is_seen()):
                 continue
 
-            # disparities = disCalc.get_disparities(left_hand, right_hand)
+            coords = distCalc.get_coords(left_hand, right_hand)
 
-            # distances = pair.get_distances()
-
-            # print(disparities)
-
-
-            distCalc.get_distances(left_hand, right_hand)
-
-
-#             vertical_error = wrist_distance - 100
-#             vertical_error = vertical_error * 2
-#
-#             MAX_VAL = 100
-#
-#             if vertical_error > MAX_VAL:
-#                 vertical_error = MAX_VAL
-#
-#             if vertical_error < -MAX_VAL:
-#                 vertical_error = -MAX_VAL
-#
-#             horizontal_error = 0.5 - rx
-#
-#             horizontal_error *= 500
-#
-#             if horizontal_error > MAX_VAL:
-#                 horizontal_error = MAX_VAL
-#
-#             if horizontal_error < -MAX_VAL:
-#                 horizontal_error = -MAX_VAL
-#
-#             vertical_error = int(vertical_error)
-#             horizontal_error = int(horizontal_error)
-#
-#             # if abs(horizontal_error) < 100:
-#             r = numpy.random.randint(0, 100)
-#
-#             sine = -1
-#
-#             if horizontal_error > 0:
-#                 sine = 1
-#
-#             print(f"r = {r}, " f"h = {horizontal_error} ", end="")
-#
-#             if abs(horizontal_error) > r:
-#                 horizontal_error = 80 * sine
-#             else:
-#                 horizontal_error = 0
-#
-#             # -------------------
-#
-#             r = numpy.random.randint(0, 100)
-#
-#             sine = -1
-#
-#             if vertical_error > 0:
-#                 sine = 1
-#
-#             print(f"r = {r}, " f"v = {vertical_error} ", end="")
-#
-#             if abs(vertical_error) > r:
-#                 vertical_error = 100 * sine
-#             else:
-#                 vertical_error = 0
-#
-#             print(
-#                 f"Wrist = {wrist_distance:.4}, "
-#                 f"vertical_error = {vertical_error} "
-#                 f"horizontal_error = {horizontal_error}"
-#             )
-#
-#             speeds = numpy.zeros(4, dtype=int)
-#
-#             speeds += [
-#                 vertical_error,
-#                 vertical_error,
-#                 vertical_error,
-#                 vertical_error,
-#             ]
-#
-#             speeds += [
-#                 -horizontal_error,
-#                 horizontal_error,
-#                 -horizontal_error,
-#                 horizontal_error,
-#             ]
-#
-#             speeds = normalize_speeds(speeds)
-#
-#             wheel_control.send(*speeds)
-#
-#         cv2.waitKey(1)
+            print(coords[0])
 
 
 if __name__ == "__main__":
