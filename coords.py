@@ -7,7 +7,6 @@ from queue import Queue
 from threading import Thread
 
 from modules.DistanceCalculator import DistanceCalculator
-from modules.wheels import Wheels
 from modules.video import Video
 from modules.zoom import Zoom
 
@@ -22,26 +21,10 @@ right_queue = Queue(maxsize=1)
 
 vid = Video()
 
-
-wheel_control = Wheels()
-
 BASELINE_M = 0.096
 FOCAL_LENGTH_PX = 1964
 FRAME_WIDTH_PX = 4608
 distCalc = DistanceCalculator(BASELINE_M, FOCAL_LENGTH_PX, FRAME_WIDTH_PX)
-
-
-def normalize_speeds(speeds: numpy.ndarray) -> numpy.ndarray:
-
-    # Find the maximum absolute value
-    max_value = numpy.max(numpy.abs(speeds))
-
-    if max_value > 100:
-        speeds = speeds / max_value * 100
-
-        speeds = speeds.astype(int)
-
-    return speeds
 
 
 def capture_hand(side: str, queue: Queue):
@@ -83,36 +66,14 @@ def show():
             if not (left_hand and right_hand):
                 continue
 
-            distances = distCalc.get_distances(left_hand, right_hand)
+            # disparities = disCalc.get_disparities(left_hand, right_hand)
 
-            vid.show("Disparity", left_feed)
+            # distances = pair.get_distances()
 
-            print(f"Wrist = {distances[0]:.4}, Index = {distances[8]:.4}")
+            # print(disparities)
 
-            print(f"Wrist = {distances[0]:.4}, Index = {distances[8]:.4}")
 
-            canv = numpy.zeros_like(left_feed)
-
-            cv2.putText(
-                canv,
-                f"Wrist = {distances[0]:.4}",
-                (30, 100),
-                cv2.FONT_HERSHEY_TRIPLEX,
-                2,
-                (0, 0, 255),
-                2,
-            )
-            cv2.putText(
-                canv,
-                f"Index = {distances[8]:.4}",
-                (30, 200),
-                cv2.FONT_HERSHEY_TRIPLEX,
-                2,
-                (0, 0, 255),
-                2,
-            )
-
-            vid.show("", canv)
+            distCalc.get_distances(left_hand, right_hand)
 
 
 #             vertical_error = wrist_distance - 100

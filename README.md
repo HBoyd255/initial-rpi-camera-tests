@@ -21,3 +21,8 @@ the camera modules.
 
 Possessing two feeds in a single thread runs at roughly 22fps (11 Per frame).
 Possessing two feeds in a separate thread runs at roughly 30fps (15 Per frame).
+
+# Direction
+
+Using
+[body relative direction](https://en.wikipedia.org/wiki/Body_relative_direction)
