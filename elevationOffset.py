@@ -4,7 +4,7 @@ import numpy
 from modules.eye import Eye
 from modules.video import Video
 
-# AZIMUTH_OFFSET_DEGREES is around 21 degrees
+# ELEVATION_OFFSET_DEGREES is around 21 degrees
 
 
 aruco_dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
@@ -39,9 +39,9 @@ while True:
 
     y_value_percentage_from_centre = y_value_percentage - 0.5
 
-    azimuth_offset_deg = y_value_percentage_from_centre * VERTICAL_FOV_DEGREES
+    elevation_offset_deg = y_value_percentage_from_centre * VERTICAL_FOV_DEGREES
 
-    print(azimuth_offset_deg)
+    print(elevation_offset_deg)
 
     cv2.line(image, (0, height // 2), (width, height // 2), (0, 0, 255), 3)
 
@@ -71,7 +71,7 @@ while True:
 
     cv2.putText(
         image,
-        f"Azimuth Offset: {azimuth_offset_deg:.4} Degrees",
+        f"Elevation Offset: {elevation_offset_deg:.4} Degrees",
         (500, (y_value + (height // 2)) // 2 - 30),
         cv2.FONT_HERSHEY_TRIPLEX,
         1,
