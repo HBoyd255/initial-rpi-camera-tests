@@ -99,7 +99,8 @@ class Zoom:
 
             self._evaluate_zoom_use(numpy.copy(hand_from_zoom.landmarks))
 
-            zoom_frame = hand_from_zoom.draw(zoom_frame)
+            if self._vid is not None:
+                zoom_frame = hand_from_zoom.draw(zoom_frame)
 
             hand_from_zoom.landmarks /= 4
             hand_from_zoom.landmarks += self._zoom_coords
@@ -116,12 +117,9 @@ class Zoom:
         )
         body = Body(pose_results)
 
-        pose_annotated = numpy.copy(frame_th)
-
-        if body.is_seen():
-            pose_annotated = body.draw(pose_annotated)
-
         if self._vid is not None:
+            pose_annotated = numpy.copy(frame_th)
+            pose_annotated = body.draw(pose_annotated)
             self._vid.show("Pose", pose_annotated)
 
         return body
@@ -169,7 +167,7 @@ class Zoom:
         if numpy.max(max_) > 1:
             self.use_zoom = False
 
-    def get_hand(self, full_res_frame) -> Hand:
+    def get_hand(self, full_res_frame, simple=False) -> Hand:
 
         # TODO move into constants
 
@@ -185,6 +183,9 @@ class Zoom:
         full_fov_thumb = numpy.array(
             full_res_frame[::4, ::4], dtype=numpy.uint8
         )
+
+        if simple:
+            return self.get_from_fov(full_fov_thumb)
 
         if self.use_zoom is False:
             hand = self.get_from_fov(full_fov_thumb)
@@ -216,6 +217,7 @@ class Zoom:
 
                 return hand
 
+        print("Recapturing Body")
         body = self._get_pose(full_fov_thumb)
 
         if body.is_seen():
