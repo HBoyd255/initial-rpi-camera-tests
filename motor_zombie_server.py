@@ -23,7 +23,7 @@ print(f"Server started on {IP}:{PORT}")
 
 
 left_cam = Eye()
-vid = Video()
+vid = Video(canvas_framing=(1, 1))
 
 
 fps = FPS()
@@ -33,7 +33,7 @@ def stream_video():
 
     while True:
 
-        frame = left_cam.array()
+        frame = left_cam.array(res="mid")
         vid.show("live Feed", frame)
 
 
