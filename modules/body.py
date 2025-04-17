@@ -1,3 +1,4 @@
+import cv2
 import mediapipe
 import numpy
 
@@ -9,8 +10,6 @@ mp_pose = mediapipe.solutions.pose
 class Body:
 
     def __init__(self, results):
-
-        self._results = results
 
         self._seen = results.pose_landmarks is not None
 
@@ -25,9 +24,6 @@ class Body:
             ]
         )
 
-        # self.angle_rad = 0.0
-        # self.gesture = "Unknown"
-
     def is_seen(self):
         return self._seen
 
@@ -38,23 +34,47 @@ class Body:
 
         return "Body"
 
-    def draw(self, frame: numpy.ndarray):
+    def draw(self, frame: numpy.ndarray, small=False):
 
         drawing_frame = numpy.copy(frame)
 
         if not self.is_seen():
             return drawing_frame
 
-        # joint_style = mp_drawing.DrawingSpec(
-        #     color=(255, 0, 0), thickness=4, circle_radius=3
-        # )
-        line_style = mp_drawing.DrawingSpec(color=(255, 0, 255), thickness=3)
+        height = len(drawing_frame)
+        width = len(drawing_frame[0])
 
-        mp_drawing.draw_landmarks(
-            drawing_frame,
-            self._results.pose_landmarks,
-            mp_pose.POSE_CONNECTIONS,
-            connection_drawing_spec=line_style,
-        )
+        pixel_coords = [
+            (int(coord[0] * width), int(coord[1] * height))
+            for coord in self.landmarks
+        ]
+
+        colour = (255, 0, 255)
+
+        if small:
+            width = 1
+        else:
+            width = 3
+
+        def line(p1_index: int, p2_index: int):
+            cv2.line(
+                drawing_frame,
+                pixel_coords[p1_index],
+                pixel_coords[p2_index],
+                colour,
+                width,
+            )
+
+        line(16, 14)
+        line(14, 12)
+        line(12, 11)
+        line(11, 13)
+        line(13, 15)
+
+        line(28, 26)
+        line(26, 24)
+        line(24, 23)
+        line(23, 25)
+        line(25, 27)
 
         return drawing_frame

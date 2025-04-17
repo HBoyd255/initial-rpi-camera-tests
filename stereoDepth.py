@@ -6,7 +6,7 @@ from modules.eye import Eye
 from queue import Queue
 from threading import Thread
 
-from modules.DistanceCalculator import DistanceCalculator
+from modules.distanceCalculator import DistanceCalculator
 from modules.wheels import Wheels
 from modules.video import Video
 from modules.zoom import Zoom
@@ -28,8 +28,17 @@ wheel_control = Wheels()
 BASELINE_M = 0.096
 FOCAL_LENGTH_PX = 1964
 FRAME_WIDTH_PX = 4608
-distCalc = DistanceCalculator(BASELINE_M, FOCAL_LENGTH_PX, FRAME_WIDTH_PX)
 
+HORIZONTAL_FOV_DEGREES = 102
+VERTICAL_FOV_DEGREES = 67
+
+distCalc = DistanceCalculator(
+    BASELINE_M,
+    FOCAL_LENGTH_PX,
+    FRAME_WIDTH_PX,
+    HORIZONTAL_FOV_DEGREES,
+    VERTICAL_FOV_DEGREES,
+)
 
 def normalize_speeds(speeds: numpy.ndarray) -> numpy.ndarray:
 
