@@ -75,29 +75,29 @@ while True:
         # All motors go backwards
         speeds += [-MOTOR_SPEED, -MOTOR_SPEED, -MOTOR_SPEED, -MOTOR_SPEED]
 
-    if keyboard.is_pressed("a"):
-        # Drive left,
-        # Front left and back right go backwards
-        # Front right and back left go forwards
-        speeds += [-MOTOR_SPEED, MOTOR_SPEED, MOTOR_SPEED, -MOTOR_SPEED]
-
-    if keyboard.is_pressed("d"):
-        # Drive right,wdd
-        # Front left and back right go forwards
-        # Front right and back left go backwards
-        speeds += [MOTOR_SPEED, -MOTOR_SPEED, -MOTOR_SPEED, MOTOR_SPEED]
-
-    if keyboard.is_pressed("k"):
+    if keyboard.is_pressed("a") or keyboard.is_pressed("k"):
         # Rotate left
         # Left motors go backwards
         # Right motors go forwards
         speeds += [-MOTOR_SPEED, MOTOR_SPEED, -MOTOR_SPEED, MOTOR_SPEED]
 
-    if keyboard.is_pressed("l"):
+    if keyboard.is_pressed("d") or keyboard.is_pressed("l"):
         # Rotate right
         # Left motors go forwards
         # Right motors go backwards
         speeds += [MOTOR_SPEED, -MOTOR_SPEED, MOTOR_SPEED, -MOTOR_SPEED]
+
+    if keyboard.is_pressed("q"):
+        # Drive left,
+        # Front left and back right go backwards
+        # Front right and back left go forwards
+        speeds += [-MOTOR_SPEED, MOTOR_SPEED, MOTOR_SPEED, -MOTOR_SPEED]
+
+    if keyboard.is_pressed("e"):
+        # Drive right,wdd
+        # Front left and back right go forwards
+        # Front right and back left go backwards
+        speeds += [MOTOR_SPEED, -MOTOR_SPEED, -MOTOR_SPEED, MOTOR_SPEED]
 
     speeds = normalize_speeds(speeds)
 
