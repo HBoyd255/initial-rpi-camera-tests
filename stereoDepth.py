@@ -6,7 +6,7 @@ from modules.eye import Eye
 from queue import Queue
 from threading import Thread
 
-from modules.distanceCalculator import Localiser
+from modules.localiser import Localiser
 from modules.wheels import Wheels
 from modules.video import Video
 from modules.zoom import Zoom

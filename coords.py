@@ -4,7 +4,7 @@ import numpy
 from modules.eye import Eye
 from multiprocessing import Process, Queue
 
-from modules.distanceCalculator import Localiser
+from modules.localiser import Localiser
 from modules.fps import FPS
 from modules.video import Video
 from modules.zoom import Zoom, draw_zoom_outline

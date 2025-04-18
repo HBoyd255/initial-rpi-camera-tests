@@ -2,6 +2,27 @@ import numpy
 
 from modules.translation import *
 
+def camera_to_global(points):
+    # Rotate 21 degrees around the x axis, then move 19.2cm up the Z axis
+
+    ELEVATION_OFFSET_DEGREES = -21
+
+    rotation_angle = numpy.radians(ELEVATION_OFFSET_DEGREES)
+
+    rotation_matrix = numpy.array(
+        [
+            [1, 0, 0],
+            [0, numpy.cos(rotation_angle), -numpy.sin(rotation_angle)],
+            [0, numpy.sin(rotation_angle), numpy.cos(rotation_angle)],
+        ]
+    )
+
+    rotated_points = points @ rotation_matrix
+
+    rotated_points += [0, 0, 0.192]
+
+    return rotated_points
+
 
 class Localiser:
 
@@ -63,3 +84,4 @@ class Localiser:
         global_coords = camera_to_global(cam_relative)
 
         return global_coords
+
