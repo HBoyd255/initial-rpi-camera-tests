@@ -21,18 +21,23 @@ FRAME_WIDTH_PX = 4608
 HORIZONTAL_FOV_DEGREES = 102
 VERTICAL_FOV_DEGREES = 67
 
+ELEVATION_OFFSET_DEGREES = -21
+HORIZONTAL_OFFSET = 0.192
+
+
 localiser = Localiser(
     BASELINE_M,
     FOCAL_LENGTH_PX,
     FRAME_WIDTH_PX,
     HORIZONTAL_FOV_DEGREES,
     VERTICAL_FOV_DEGREES,
+    ELEVATION_OFFSET_DEGREES,
+    HORIZONTAL_OFFSET,
 )
 
 
 fps = FPS()
 
-from modules.translation import *
 
 def capture_hand(side: str, queue: Queue):
 
@@ -63,12 +68,10 @@ def draw_square_on_ground(frame, ground_coord):
     point3 = ground_coord + [-0.1, -0.1, 0]
     point4 = ground_coord + [0.1, -0.1, 0]
 
-    points_c = global_to_camera([point1, point2, point3, point4])
-
-    drawing_frame = line_3d(drawing_frame, points_c[0], points_c[1])
-    drawing_frame = line_3d(drawing_frame, points_c[1], points_c[2])
-    drawing_frame = line_3d(drawing_frame, points_c[2], points_c[3])
-    drawing_frame = line_3d(drawing_frame, points_c[3], points_c[0])
+    drawing_frame = localiser.line_3d(drawing_frame, point1, point2)
+    drawing_frame = localiser.line_3d(drawing_frame, point2, point3)
+    drawing_frame = localiser.line_3d(drawing_frame, point3, point4)
+    drawing_frame = localiser.line_3d(drawing_frame, point4, point1)
 
     return drawing_frame
 
@@ -99,21 +102,18 @@ def show():
 
         hand_coords = localiser.get_coords(left_hand, right_hand)
 
-        
-        #         for i in range(11):
-        #             line = numpy.array([[-1, i * 0.2, 0], [1, i * 0.2, 0]])
-        #             line_c = global_to_camera(line)
-        #             left_feed = line_3d(left_feed, line_c[0], line_c[1])
-        #
-        #             line = numpy.array([[(i * 0.2) - 1, 1, 0], [(i * 0.2) - 1, 2, 0]])
-        #             line_c = global_to_camera(line)
-        #             left_feed = line_3d(left_feed, line_c[0], line_c[1])
-        #
+        for i in range(11):
+            line = numpy.array([[-1, i * 0.2, 0], [1, i * 0.2, 0]])
+            left_feed = localiser.line_3d(left_feed, line[0], line[1])
+
+            line = numpy.array([[(i * 0.2) - 1, 1, 0], [(i * 0.2) - 1, 2, 0]])
+            left_feed = localiser.line_3d(left_feed, line[0], line[1])
+
         for i in range(21):
 
             p = hand_coords[i]
 
-            left_feed = circle_3d(left_feed, p)
+            left_feed = localiser.circle_3d(left_feed, p)
 
         tip = hand_coords[8]
 
@@ -133,14 +133,10 @@ def show():
                 if proj[2] < 0:
                     break
 
-                new_point = global_to_camera(proj)
-
-                left_feed = circle_3d(left_feed, new_point)
+                left_feed = localiser.circle_3d(left_feed, proj)
 
             ground_point = proj
             ground_point[2] = 0
-
-            # peebs = global_to_camera([ground_point])[0]
 
             # left_feed = line_3d(left_feed, coords[8], peebs, colour=(0, 0, 255))
 
