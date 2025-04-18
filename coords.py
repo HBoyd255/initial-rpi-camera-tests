@@ -6,7 +6,7 @@ from multiprocessing import Process, Queue
 from modules.localiser import Localiser
 from modules.fps import FPS
 from modules.video import Video
-from modules.zoom import Zoom, draw_zoom_outline
+from modules.zoom import Zoom
 
 FrameStruct = namedtuple("FrameStruct", ["frame", "hand"])
 
@@ -51,7 +51,7 @@ def capture_hand(side: str, queue: Queue):
 
         frame = numpy.array(frame[::4, ::4])
 
-        draw_zoom_outline(frame, hand_finder._zoom_coords)
+        frame = hand_finder.draw_zoom_outline(frame)
 
         queue.put(FrameStruct(frame, hand))
 

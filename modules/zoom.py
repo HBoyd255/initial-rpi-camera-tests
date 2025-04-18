@@ -13,26 +13,6 @@ RIGHT_INDEX = 16
 RED = (0, 0, 255)
 
 
-def draw_zoom_outline(frame, offset):
-
-    height = len(frame)
-    width = len(frame[0])
-
-    pixel_coords = (int(offset[0] * width), int(offset[1] * height))
-
-    start_x = pixel_coords[0] - (width // 8)
-    end_x = pixel_coords[0] + (width // 8)
-
-    start_y = pixel_coords[1] - (height // 8)
-    end_y = pixel_coords[1] + (height // 8)
-
-    cv2.line(frame, (start_x, start_y), (start_x, end_y), RED, 1)
-    cv2.line(frame, (end_x, start_y), (end_x, end_y), RED, 1)
-
-    cv2.line(frame, (start_x, start_y), (end_x, start_y), RED, 1)
-    cv2.line(frame, (start_x, end_y), (end_x, end_y), RED, 1)
-
-
 class Zoom:
 
     def __init__(self, continuous=True):
@@ -224,3 +204,29 @@ class Zoom:
         # If no hands where found, return a blank hand.
 
         return Hand(None)
+
+    def draw_zoom_outline(self, frame):
+
+        drawing_frame = numpy.copy(frame)
+
+        height = len(drawing_frame)
+        width = len(drawing_frame[0])
+
+        pixel_coords = (
+            int(self._zoom_coords[0] * width),
+            int(self._zoom_coords[1] * height),
+        )
+
+        start_x = pixel_coords[0] - (width // 8)
+        end_x = pixel_coords[0] + (width // 8)
+
+        start_y = pixel_coords[1] - (height // 8)
+        end_y = pixel_coords[1] + (height // 8)
+
+        cv2.line(drawing_frame, (start_x, start_y), (start_x, end_y), RED, 1)
+        cv2.line(drawing_frame, (end_x, start_y), (end_x, end_y), RED, 1)
+
+        cv2.line(drawing_frame, (start_x, start_y), (end_x, start_y), RED, 1)
+        cv2.line(drawing_frame, (start_x, end_y), (end_x, end_y), RED, 1)
+
+        return drawing_frame
