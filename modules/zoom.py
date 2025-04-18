@@ -47,6 +47,8 @@ class Zoom:
             min_detection_confidence=0.5,
         )
 
+        self._last_hand_seen = Hand(None)
+
     def get_from_fov(self, frame_th) -> Hand:
 
         full_hand_results = self._hand_mp_full.process(
@@ -172,6 +174,7 @@ class Zoom:
 
                 if hand.is_seen():
                     self._concurrent_failures = 0
+                    self._last_hand_seen = hand
                     return hand
 
                 self.use_zoom = False
@@ -180,12 +183,16 @@ class Zoom:
             hand = self.get_from_fov(full_fov_thumb)
 
             if hand.is_seen():
-                self._concurrent_failures = 0
                 self._recenter_from_hand(hand)
+                self._concurrent_failures = 0
+                self._last_hand_seen = hand
+                return hand
 
-            else:
-                self._concurrent_failures += 1
-                self.use_zoom = True
+            self._concurrent_failures += 1
+            self.use_zoom = True
+
+            if self._concurrent_failures == 1:
+                return self._last_hand_seen
 
             return hand
 
@@ -193,15 +200,18 @@ class Zoom:
             hand = self.get_from_zoom(full_res_frame)
 
             if hand.is_seen():
-                self._concurrent_failures = 0
-
                 self._recenter_from_hand(hand)
 
+                self._concurrent_failures = 0
+                self._last_hand_seen = hand
                 return hand
 
         self._concurrent_failures += 1
 
         # If no hands where found, return a blank hand.
+
+        if self._concurrent_failures == 1:
+            return self._last_hand_seen
 
         return Hand(None)
 
