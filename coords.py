@@ -1,5 +1,4 @@
 from collections import namedtuple
-import cv2
 import numpy
 from modules.eye import Eye
 from multiprocessing import Process, Queue

@@ -218,31 +218,18 @@ class Zoom:
                 return hand
 
         print("Recapturing Body")
+        self._left_is_dominant = not self._left_is_dominant
         body = self._get_pose(full_fov_thumb)
 
         if body.is_seen():
-
-            temp = self._zoom_coords
 
             self._recenter_from_body(body, use_left=self._left_is_dominant)
 
             hand = self.get_from_zoom(full_res_frame, mute=True)
 
             if hand.is_seen():
-                self._recenter_from_hand(hand)
                 return hand
 
-            self._recenter_from_body(body, use_left=not self._left_is_dominant)
-
-            hand = self.get_from_zoom(full_res_frame, mute=True)
-
-            if hand.is_seen():
-                self._recenter_from_hand(hand)
-
-                self._left_is_dominant = not self._left_is_dominant
-                return hand
-
-            self._zoom_coords = temp
             self.use_zoom = False
 
         # If no hands where found, return a blank hand.
