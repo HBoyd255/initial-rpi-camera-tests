@@ -128,7 +128,7 @@ class Zoom:
 
         dif = self._zoom_coords - hand.get_centre()
 
-        dif /= 10
+        dif /= 2
 
         self._zoom_coords -= dif
 
