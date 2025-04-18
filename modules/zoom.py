@@ -35,17 +35,18 @@ def draw_zoom_outline(frame, offset):
 
 class Zoom:
 
-    def __init__(self, video=None, continuous=True):
-
-        self._vid = video
+    def __init__(self, continuous=True):
 
         self.use_zoom = False
+        self._recapture_body = False
 
         self.resolution_full = None
 
         self._zoom_coords = numpy.array([1 / 8, 1 / 8])
 
         self._left_is_dominant = True
+
+        self._concurrent_failures = 0
 
         self._hand_mp_full = mediapipe.solutions.hands.Hands(
             static_image_mode=(not continuous),
@@ -99,15 +100,9 @@ class Zoom:
 
             self._evaluate_zoom_use(numpy.copy(hand_from_zoom.landmarks))
 
-            if self._vid is not None:
-                zoom_frame = hand_from_zoom.draw(zoom_frame)
-
             hand_from_zoom.landmarks /= 4
             hand_from_zoom.landmarks += self._zoom_coords
             hand_from_zoom.landmarks -= numpy.array([1 / 8, 1 / 8])
-
-        if self._vid is not None and mute is False:
-            self._vid.show("Zoom Frame", zoom_frame)
 
         return hand_from_zoom
 
@@ -116,11 +111,6 @@ class Zoom:
             cv2.cvtColor(frame_th, cv2.COLOR_BGR2RGB)
         )
         body = Body(pose_results)
-
-        if self._vid is not None:
-            pose_annotated = numpy.copy(frame_th)
-            pose_annotated = body.draw(pose_annotated)
-            self._vid.show("Pose", pose_annotated)
 
         return body
 
@@ -187,50 +177,50 @@ class Zoom:
         if simple:
             return self.get_from_fov(full_fov_thumb)
 
+        if self._concurrent_failures > 3:
+
+            print("Recapturing Body")
+            self._left_is_dominant = not self._left_is_dominant
+            body = self._get_pose(full_fov_thumb)
+
+            if body.is_seen():
+                self._recapture_body = False
+
+                self._recenter_from_body(body, use_left=self._left_is_dominant)
+
+                hand = self.get_from_zoom(full_res_frame, mute=True)
+
+                if hand.is_seen():
+                    self._concurrent_failures = 0
+                    return hand
+
+                self.use_zoom = False
+
         if self.use_zoom is False:
             hand = self.get_from_fov(full_fov_thumb)
 
             if hand.is_seen():
-
+                self._concurrent_failures = 0
                 self._recenter_from_hand(hand)
 
-                if self._vid is not None:
+            else:
+                self._concurrent_failures += 1
+                self.use_zoom = True
 
-                    full_fov_thumb = hand.draw(full_fov_thumb)
-                    draw_zoom_outline(full_fov_thumb, self._zoom_coords)
-                    self._vid.show("full", full_fov_thumb)
+            return hand
 
-                return hand
-
-            self.use_zoom = True
-
-        if self._vid is not None:
-            draw_zoom_outline(full_fov_thumb, self._zoom_coords)
-            self._vid.show("full", full_fov_thumb)
-
-        if self.use_zoom is True:
+        else:
             hand = self.get_from_zoom(full_res_frame)
 
             if hand.is_seen():
+                self._concurrent_failures = 0
 
                 self._recenter_from_hand(hand)
 
                 return hand
 
-        print("Recapturing Body")
-        self._left_is_dominant = not self._left_is_dominant
-        body = self._get_pose(full_fov_thumb)
-
-        if body.is_seen():
-
-            self._recenter_from_body(body, use_left=self._left_is_dominant)
-
-            hand = self.get_from_zoom(full_res_frame, mute=True)
-
-            if hand.is_seen():
-                return hand
-
-            self.use_zoom = False
+        self._concurrent_failures += 1
 
         # If no hands where found, return a blank hand.
+
         return Hand(None)
