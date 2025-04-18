@@ -6,7 +6,7 @@ from modules.eye import Eye
 from queue import Queue
 from threading import Thread
 
-from modules.distanceCalculator import DistanceCalculator
+from modules.distanceCalculator import Localiser
 from modules.wheels import Wheels
 from modules.video import Video
 from modules.zoom import Zoom
@@ -32,7 +32,7 @@ FRAME_WIDTH_PX = 4608
 HORIZONTAL_FOV_DEGREES = 102
 VERTICAL_FOV_DEGREES = 67
 
-distCalc = DistanceCalculator(
+distCalc = Localiser(
     BASELINE_M,
     FOCAL_LENGTH_PX,
     FRAME_WIDTH_PX,

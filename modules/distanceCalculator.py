@@ -1,7 +1,9 @@
 import numpy
 
+from modules.translation import *
 
-class DistanceCalculator:
+
+class Localiser:
 
     def __init__(
         self, baseline_m, focal_length_px, frame_width_px, h_fov_deg, v_fov_deg
@@ -56,6 +58,8 @@ class DistanceCalculator:
 
         z_vals = distances * numpy.sin(elevation_angles_rad)
 
-        points = numpy.column_stack([x_vals, y_vals, z_vals])
+        cam_relative = numpy.column_stack([x_vals, y_vals, z_vals])
 
-        return points
+        global_coords = camera_to_global(cam_relative)
+
+        return global_coords

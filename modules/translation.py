@@ -1,11 +1,9 @@
-
-
-
 import cv2
 import numpy
 
 HORIZONTAL_FOV_DEGREES = 102
 VERTICAL_FOV_DEGREES = 67
+
 
 def camera_to_global(points):
     # Rotate 21 degrees around the x axis, then move 19.2cm up the Z axis
@@ -67,13 +65,15 @@ def circle_2d(frame, coord):
     return drawing_frame
 
 
-def circle_3d(frame, coord_3d):
+def circle_3d(frame, coord_3d_glo):
+
+    coord_3d_cam = global_to_camera(coord_3d_glo)
 
     drawing_frame = numpy.copy(frame)
 
-    x = coord_3d[0]
-    y = coord_3d[1]
-    z = coord_3d[2]
+    x = coord_3d_cam[0]
+    y = coord_3d_cam[1]
+    z = coord_3d_cam[2]
 
     e = numpy.arctan2(z, y)
     a = numpy.arctan2(x, y)

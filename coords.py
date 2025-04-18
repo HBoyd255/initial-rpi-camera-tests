@@ -4,7 +4,7 @@ import numpy
 from modules.eye import Eye
 from multiprocessing import Process, Queue
 
-from modules.distanceCalculator import DistanceCalculator
+from modules.distanceCalculator import Localiser
 from modules.fps import FPS
 from modules.video import Video
 from modules.zoom import Zoom, draw_zoom_outline
@@ -21,7 +21,7 @@ FRAME_WIDTH_PX = 4608
 HORIZONTAL_FOV_DEGREES = 102
 VERTICAL_FOV_DEGREES = 67
 
-distCalc = DistanceCalculator(
+localiser = Localiser(
     BASELINE_M,
     FOCAL_LENGTH_PX,
     FRAME_WIDTH_PX,
@@ -97,10 +97,9 @@ def show():
         if not (left_hand.is_seen() and right_hand.is_seen()):
             continue
 
-        hand_coords = distCalc.get_coords(left_hand, right_hand)
+        hand_coords = localiser.get_coords(left_hand, right_hand)
 
-        global_coords = camera_to_global(hand_coords)
-
+        
         #         for i in range(11):
         #             line = numpy.array([[-1, i * 0.2, 0], [1, i * 0.2, 0]])
         #             line_c = global_to_camera(line)
@@ -110,15 +109,15 @@ def show():
         #             line_c = global_to_camera(line)
         #             left_feed = line_3d(left_feed, line_c[0], line_c[1])
         #
-        #         for i in range(21):
-        #
-        #             p = coords[i]
-        #
-        #             left_feed = circle_3d(left_feed, p)
+        for i in range(21):
 
-        tip = global_coords[8]
+            p = hand_coords[i]
 
-        knuckle = global_coords[5]
+            left_feed = circle_3d(left_feed, p)
+
+        tip = hand_coords[8]
+
+        knuckle = hand_coords[5]
 
         dif = tip - knuckle
 
