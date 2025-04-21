@@ -1,26 +1,62 @@
 import cv2
 import numpy
 
+from modules.physical import FOCAL_LENGTH_MM, SENSORS_SIZE, STEREO_BASELINE_M
+
+
+def camera_to_global(points):
+    # Rotate 21 degrees around the x axis, then move 19.2cm up the Z axis
+
+    ELEVATION_OFFSET_DEGREES = 21
+
+    rotation_angle = numpy.radians(-ELEVATION_OFFSET_DEGREES)
+
+    rotation_matrix = numpy.array(
+        [
+            [1, 0, 0],
+            [0, numpy.cos(rotation_angle), -numpy.sin(rotation_angle)],
+            [0, numpy.sin(rotation_angle), numpy.cos(rotation_angle)],
+        ]
+    )
+
+    rotated_points = points @ rotation_matrix
+
+    rotated_points += [0, 0, 0.192]
+
+    return rotated_points
+
+
+def global_to_camera(points):
+
+    transformed_points = numpy.copy(points)
+
+    transformed_points -= [0, 0, 0.192]
+
+    ELEVATION_OFFSET_DEGREES = 21
+
+    rotation_angle = numpy.radians(ELEVATION_OFFSET_DEGREES)
+
+    rotation_matrix = numpy.array(
+        [
+            [1, 0, 0],
+            [0, numpy.cos(rotation_angle), -numpy.sin(rotation_angle)],
+            [0, numpy.sin(rotation_angle), numpy.cos(rotation_angle)],
+        ]
+    )
+
+    transformed_points = transformed_points @ rotation_matrix
+
+    return transformed_points
+
 
 class Localiser:
 
     def __init__(
         self,
-        baseline_m,
-        focal_length_px,
-        frame_width_px,
-        h_fov_deg,
-        v_fov_deg,
-        elevation_offset_deg,
-        horizontal_offset_m,
     ):
-        self._distance_numerator = baseline_m * focal_length_px / frame_width_px
-
-        self._h_fov_rad = numpy.radians(h_fov_deg)
-        self._v_fov_rad = numpy.radians(v_fov_deg)
-
-        self._elevation_offset_rad = numpy.radians(elevation_offset_deg)
-        self._horizontal_offset_m = horizontal_offset_m
+        self._distance_numerator = (
+            FOCAL_LENGTH_MM / SENSORS_SIZE[0] * STEREO_BASELINE_M
+        )
 
     def get_disparities(self, left_eye_hand, right_eye_hand):
 
@@ -40,108 +76,85 @@ class Localiser:
 
     def get_coords(self, left_hand, right_hand):
 
+        # Get the coordinates using the pinhole method
+
         landmarks = numpy.array(left_hand.landmarks)
         distances = numpy.array(self.get_distances(left_hand, right_hand))
 
-        # Array to the azimuth and elevation angles of each point in the hand,
-        # measured in radians.
-        azimuths = (landmarks[:, 0] - 0.5) * self._h_fov_rad
-        elevations = (0.5 - landmarks[:, 1]) * self._v_fov_rad
+        # Center the landmarks
+        landmarks -= [0.5, 0.5]
 
-        # Offset the elevations angels by the vertical angle of the camera.
-        elevations -= self._elevation_offset_rad
+        landmarks[:, 1] = 0 - landmarks[:, 1]
 
-        # Calculate the X, Y and Z coordinates of each point, in meters.
-        x_vals = distances * numpy.cos(elevations) * numpy.sin(azimuths)
-        y_vals = distances * numpy.cos(elevations) * numpy.cos(azimuths)
-        z_vals = distances * numpy.sin(elevations)
+        sensor_landmarks = SENSORS_SIZE * landmarks
 
-        z_vals += self._horizontal_offset_m
+        x_vals = sensor_landmarks[:, 0] * distances / FOCAL_LENGTH_MM
+        y_vals = distances
+        z_vals = sensor_landmarks[:, 1] * distances / FOCAL_LENGTH_MM
 
-        hand_coords = numpy.column_stack([x_vals, y_vals, z_vals])
+        coords_cam = numpy.column_stack([x_vals, y_vals, z_vals])
 
-        return hand_coords
+        coords_global = camera_to_global(coords_cam)
 
-    def circle_2d(self, frame, coord):
+        return coords_global
 
-        drawing_frame = numpy.copy(frame)
+    def _3d_to_landmark(self, coord_3d):
 
-        height = len(frame)
-        width = len(frame[0])
+        cam_coords = global_to_camera(coord_3d)
 
-        p_x = int(coord[0] * width)
-        p_y = int(coord[1] * height)
+        x_val = cam_coords[0]
+        y_val = cam_coords[1]
+        z_val = cam_coords[2]
 
-        cv2.circle(drawing_frame, (p_x, p_y), 3, (255, 0, 0), -1)
+        sensor_x = x_val / y_val * FOCAL_LENGTH_MM
+        sensor_y = z_val / y_val * FOCAL_LENGTH_MM
 
-        return drawing_frame
+        sensor_y = 0 - sensor_y
+
+        sensor_landmark = numpy.array([sensor_x, sensor_y])
+
+        landmark = sensor_landmark / SENSORS_SIZE
+
+        landmark += [0.5, 0.5]
+
+        return landmark
 
     def circle_3d(self, frame, coord_3d):
 
         drawing_frame = numpy.copy(frame)
 
-        x = coord_3d[0]
-        y = coord_3d[1]
-        z = coord_3d[2]
+        height = len(drawing_frame)
+        width = len(drawing_frame[0])
 
-        z -= self._horizontal_offset_m
+        if coord_3d[1] < 0:
+            return drawing_frame
 
-        e = numpy.arctan2(z, y) + self._elevation_offset_rad
-        a = numpy.arctan2(x, y)
+        landmark = self._3d_to_landmark(coord_3d)
 
-        X = (a / self._h_fov_rad) + 0.5
-        Y = 0.5 - (e / self._v_fov_rad)
+        pixel_coords = numpy.array(landmark * [width, height], dtype=int)
 
-        drawing_frame = self.circle_2d(drawing_frame, (X, Y))
+        cv2.circle(drawing_frame, pixel_coords, 3, (255, 0, 0), -1)
 
         return drawing_frame
 
-    def line_2d(self, frame, coord1, coord2, colour=(255, 0, 255)):
+    def line_3d(self, frame, coord_3d, colour=(255, 0, 255)):
 
         drawing_frame = numpy.copy(frame)
 
-        height = len(frame)
-        width = len(frame[0])
+        coord_3d = numpy.array(coord_3d)
 
-        p1 = (int(coord1[0] * width), int(coord1[1] * height))
-        p2 = (int(coord2[0] * width), int(coord2[1] * height))
+        height = len(drawing_frame)
+        width = len(drawing_frame[0])
 
-        cv2.line(drawing_frame, p1, p2, colour, 3)
+        if numpy.min(coord_3d[:, 1]) < 0:
+            return drawing_frame
 
-        return drawing_frame
+        landmarks = numpy.array([self._3d_to_landmark(c) for c in coord_3d])
 
-    def line_3d(self, frame, coord1_3d, coord2_3d, colour=((255, 0, 255))):
+        pixel_coords = numpy.array(landmarks * [width, height], dtype=int)
 
-        # coord2_3d = global_to_camera(coord2_3d)
-
-        drawing_frame = numpy.copy(frame)
-
-        x1 = coord1_3d[0]
-        y1 = coord1_3d[1]
-        z1 = coord1_3d[2]
-
-        z1 -= self._horizontal_offset_m
-
-        e1 = numpy.arctan2(z1, y1) + self._elevation_offset_rad
-        a1 = numpy.arctan2(x1, y1)
-
-        X1 = (a1 / self._h_fov_rad) + 0.5
-        Y1 = 0.5 - (e1 / self._v_fov_rad)
-
-        x2 = coord2_3d[0]
-        y2 = coord2_3d[1]
-        z2 = coord2_3d[2]
-
-        z2 -= self._horizontal_offset_m
-
-        e2 = numpy.arctan2(z2, y2) + self._elevation_offset_rad
-        a2 = numpy.arctan2(x2, y2)
-
-        X2 = (a2 / self._h_fov_rad) + 0.5
-        Y2 = 0.5 - (e2 / self._v_fov_rad)
-
-        drawing_frame = self.line_2d(
-            drawing_frame, (X1, Y1), (X2, Y2), colour=colour
+        cv2.polylines(
+            drawing_frame, [pixel_coords], isClosed=True, color=colour
         )
 
         return drawing_frame

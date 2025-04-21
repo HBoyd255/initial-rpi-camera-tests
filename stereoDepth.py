@@ -25,26 +25,8 @@ vid = Video()
 
 wheel_control = Wheels()
 
-BASELINE_M = 0.096
-FOCAL_LENGTH_PX = 1964
-FRAME_WIDTH_PX = 4608
 
-HORIZONTAL_FOV_DEGREES = 102
-VERTICAL_FOV_DEGREES = 67
-
-ELEVATION_OFFSET_DEGREES = -21
-HORIZONTAL_OFFSET = 0.192
-
-
-localiser = Localiser(
-    BASELINE_M,
-    FOCAL_LENGTH_PX,
-    FRAME_WIDTH_PX,
-    HORIZONTAL_FOV_DEGREES,
-    VERTICAL_FOV_DEGREES,
-    ELEVATION_OFFSET_DEGREES,
-    HORIZONTAL_OFFSET,
-)
+localiser = Localiser()
 
 
 def normalize_speeds(speeds: numpy.ndarray) -> numpy.ndarray:
