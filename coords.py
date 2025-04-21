@@ -96,23 +96,25 @@ def show():
         vid.show("Left Feed", left_feed)
         vid.show("Right Feed", right_feed)
 
+        print(fps)
+
         if not (left_hand.is_seen() and right_hand.is_seen()):
             continue
 
         hand_coords = localiser.get_coords(left_hand, right_hand)
 
-        for i in range(11):
-            line = numpy.array([[-1, i * 0.2, 0], [1, i * 0.2, 0]])
-            left_feed = localiser.line_3d(left_feed, line[0], line[1])
-
-            line = numpy.array([[(i * 0.2) - 1, 1, 0], [(i * 0.2) - 1, 2, 0]])
-            left_feed = localiser.line_3d(left_feed, line[0], line[1])
-
-        for i in range(21):
-
-            p = hand_coords[i]
-
-            left_feed = localiser.circle_3d(left_feed, p)
+#         for i in range(11):
+#             line = numpy.array([[-1, i * 0.2, 0], [1, i * 0.2, 0]])
+#             left_feed = localiser.line_3d(left_feed, line[0], line[1])
+# 
+#             line = numpy.array([[(i * 0.2) - 1, 1, 0], [(i * 0.2) - 1, 2, 0]])
+#             left_feed = localiser.line_3d(left_feed, line[0], line[1])
+# 
+#         for i in range(21):
+# 
+#             p = hand_coords[i]
+# 
+#             left_feed = localiser.circle_3d(left_feed, p)
 
         tip = hand_coords[8]
 
@@ -141,7 +143,6 @@ def show():
 
             left_feed = draw_square_on_ground(left_feed, ground_point)
 
-        print(fps)
         vid.show("Projection", left_feed)
 
 

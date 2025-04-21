@@ -32,13 +32,20 @@ FRAME_WIDTH_PX = 4608
 HORIZONTAL_FOV_DEGREES = 102
 VERTICAL_FOV_DEGREES = 67
 
-distCalc = Localiser(
+ELEVATION_OFFSET_DEGREES = -21
+HORIZONTAL_OFFSET = 0.192
+
+
+localiser = Localiser(
     BASELINE_M,
     FOCAL_LENGTH_PX,
     FRAME_WIDTH_PX,
     HORIZONTAL_FOV_DEGREES,
     VERTICAL_FOV_DEGREES,
+    ELEVATION_OFFSET_DEGREES,
+    HORIZONTAL_OFFSET,
 )
+
 
 def normalize_speeds(speeds: numpy.ndarray) -> numpy.ndarray:
 
@@ -89,16 +96,18 @@ def show():
             vid.show("Left Feed", left_feed)
             vid.show("Right Feed", right_feed)
 
-            if not (left_hand and right_hand):
+            if not (left_hand.is_seen() and right_hand.is_seen()):
                 continue
 
-            distances = distCalc.get_distances(left_hand, right_hand)
+            distances = localiser.get_distances(left_hand, right_hand)
 
             vid.show("Disparity", left_feed)
 
-            print(f"Wrist = {distances[0]:.4}, Index = {distances[8]:.4}")
+            wrist_distance = distances[0]
 
-            print(f"Wrist = {distances[0]:.4}, Index = {distances[8]:.4}")
+            print(
+                f"Wrist = {distances[0]:.4}, Index = {distances[8]:.4}", end=" "
+            )
 
             canv = numpy.zeros_like(left_feed)
 
@@ -124,7 +133,9 @@ def show():
             vid.show("", canv)
 
 
-#             vertical_error = wrist_distance - 100
+#             rx = left_hand.landmarks[0][0]
+#
+#             vertical_error = wrist_distance - 1
 #             vertical_error = vertical_error * 2
 #
 #             MAX_VAL = 100
@@ -137,7 +148,7 @@ def show():
 #
 #             horizontal_error = 0.5 - rx
 #
-#             horizontal_error *= 500
+#             horizontal_error *= 5
 #
 #             if horizontal_error > MAX_VAL:
 #                 horizontal_error = MAX_VAL
@@ -145,8 +156,8 @@ def show():
 #             if horizontal_error < -MAX_VAL:
 #                 horizontal_error = -MAX_VAL
 #
-#             vertical_error = int(vertical_error)
-#             horizontal_error = int(horizontal_error)
+#             vertical_error = int(vertical_error * 100)
+#             horizontal_error = int(horizontal_error * 100)
 #
 #             # if abs(horizontal_error) < 100:
 #             r = numpy.random.randint(0, 100)
@@ -204,8 +215,6 @@ def show():
 #             speeds = normalize_speeds(speeds)
 #
 #             wheel_control.send(*speeds)
-#
-#         cv2.waitKey(1)
 
 
 if __name__ == "__main__":

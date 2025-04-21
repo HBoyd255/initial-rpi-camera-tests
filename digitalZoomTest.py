@@ -8,7 +8,7 @@ left_eye = Eye("left")
 
 vid = Video()
 
-hand_finder = Zoom(video=vid)
+hand_finder = Zoom()
 
 while True:
 
