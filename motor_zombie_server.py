@@ -1,12 +1,12 @@
+import argparse
 import socket
 import struct
-from threading import Thread
 import time
 from modules.eye import Eye
 from modules.file_utils import text_file_to_string
 
 from modules.fps import FPS
-from modules.video import Video
+
 from modules.wheels import Wheels
 
 wheel_control = Wheels()
@@ -23,22 +23,36 @@ print(f"Server started on {IP}:{PORT}")
 
 
 left_cam = Eye()
-vid = Video(canvas_framing=(1, 1))
 
 
 fps = FPS()
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--blind",
+    action="store_true",
+    help="Runs the program without streaming the camera feed.",
+)
 
-def stream_video():
 
-    while True:
+args = parser.parse_args()
 
-        frame = left_cam.array(res="mid")
-        vid.show("live Feed", frame)
+if not args.blind:
 
+    from modules.video import Video
+    from threading import Thread
 
-stream_thread = Thread(target=stream_video)
-stream_thread.start()
+    vid = Video(canvas_framing=(1, 1))
+
+    def stream_video():
+
+        while True:
+
+            frame = left_cam.array(res="mid")
+            vid.show("live Feed", frame)
+
+    stream_thread = Thread(target=stream_video)
+    stream_thread.start()
 
 
 while True:
