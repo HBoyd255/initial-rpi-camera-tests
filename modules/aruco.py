@@ -75,22 +75,9 @@ class Aruco:
 
         return drawing_frame
 
+    def __str__(self):
 
-# from eye import Eye
-# from video import Video
-#
-#
-# eye = Eye()
-# vid = Video()
-#
-# while True:
-#
-#     frame = eye.array(res="full")
-#
-#     tag = Aruco(frame)
-#
-#     frame = numpy.array(frame[::4, ::4])
-#
-#     frame = tag.draw(frame)
-#
-#     vid.show("tag", frame)
+        if not self.is_seen():
+            return "No tag Seen."
+
+        return "Tag Seen."

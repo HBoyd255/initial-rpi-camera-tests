@@ -1,9 +1,10 @@
+import time
 import cv2
 import mediapipe
 import numpy
 
 from modules.aruco import Aruco
-from modules.body import Body
+from modules.fps import FPS
 
 
 LEFT_INDEX = 15
@@ -12,13 +13,14 @@ RIGHT_INDEX = 16
 
 RED = (0, 0, 255)
 
+DROP_THRESHOLD = 30
+
 
 class ZoomAruco:
 
-    def __init__(self, continuous=True):
+    def __init__(self):
 
         self.use_zoom = False
-        self._recapture_body = False
 
         self.resolution_full = None
 
@@ -66,14 +68,6 @@ class ZoomAruco:
 
         return tag_from_zoom
 
-    def _get_pose(self, frame_th) -> Body:
-        pose_results = self._pose_mp.process(
-            cv2.cvtColor(frame_th, cv2.COLOR_BGR2RGB)
-        )
-        body = Body(pose_results)
-
-        return body
-
     def _recenter_from_tag(self, tag: Aruco):
 
         dif = self._zoom_coords - tag.get_centre()
@@ -82,13 +76,6 @@ class ZoomAruco:
 
         self._zoom_coords -= dif
 
-        self._zoom_coords = numpy.clip(self._zoom_coords, 1 / 8, 7 / 8)
-
-    def _recenter_from_body(self, body, use_left):
-
-        index = LEFT_INDEX if use_left else RIGHT_INDEX
-
-        self._zoom_coords = body.landmarks[index]
         self._zoom_coords = numpy.clip(self._zoom_coords, 1 / 8, 7 / 8)
 
     def _evaluate_zoom_use(self, landmarks):
@@ -119,8 +106,6 @@ class ZoomAruco:
 
     def get_tag(self, full_res_frame, simple=False) -> Aruco:
 
-        # TODO move into constants
-
         if self.resolution_full is None:
 
             self.resolution_full = numpy.array(
@@ -137,25 +122,33 @@ class ZoomAruco:
         if simple:
             return self.get_from_fov(full_fov_thumb)
 
-        if self._concurrent_failures > 3:
+        if self._concurrent_failures > DROP_THRESHOLD:
 
-            print("Recapturing Body")
-            self._left_is_dominant = not self._left_is_dominant
-            body = self._get_pose(full_fov_thumb)
+            print(fps)
 
-            if body.is_seen():
-                self._recapture_body = False
+            # time.sleep(0.5)
 
-                self._recenter_from_body(body, use_left=self._left_is_dominant)
+            cf = self._concurrent_failures
 
-                tag = self.get_from_zoom(full_res_frame)
+            # cf = 13
 
-                if tag.is_seen():
-                    self._concurrent_failures = 0
-                    self._last_seen_tag = tag
-                    return tag
+            x_o = cf % 7
+            y_o = cf // 7 % 7
 
-                self.use_zoom = False
+            # print(f"cf:{cf} -> [{x_o},{y_o}]")
+
+            self._zoom_coords = numpy.array([((x_o + 1) / 8), ((y_o + 1) / 8)])
+
+            tag = self.get_from_zoom(full_res_frame)
+
+            # print(tag)
+
+            if tag.is_seen():
+                self._concurrent_failures = 0
+                self._last_seen_tag = tag
+                return tag
+
+            self.use_zoom = False
 
         if self.use_zoom is False:
             tag = self.get_from_fov(full_fov_thumb)
@@ -169,7 +162,7 @@ class ZoomAruco:
             self._concurrent_failures += 1
             self.use_zoom = True
 
-            if self._concurrent_failures == 1:
+            if self._concurrent_failures < DROP_THRESHOLD:
                 return self._last_seen_tag
 
             return tag
@@ -188,7 +181,7 @@ class ZoomAruco:
 
         # If no Aruco tags where found, return a blank tag.
 
-        if self._concurrent_failures == 1:
+        if self._concurrent_failures <= DROP_THRESHOLD:
             return self._last_seen_tag
 
         return Aruco(None)

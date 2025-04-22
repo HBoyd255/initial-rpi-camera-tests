@@ -103,41 +103,41 @@ def show():
         if not (left_tag.is_seen() and right_tag.is_seen()):
             continue
 
-        tag_coords = localiser.get_coords(left_tag, right_tag)
-
-        print(tag_coords)
-
-        for p in tag_coords:
-            left_frame_annotated = localiser.circle_3d(left_frame_annotated, p)
-
-        tip = tag_coords[1]
-
-        knuckle = tag_coords[2]
-
-        dif = tip - knuckle
-
-        proj = numpy.copy(tip)
-
-        for i in range(100):
-            proj += dif
-
-            if proj[2] < 0:
-                break
-
-            left_frame_annotated = localiser.circle_3d(
-                left_frame_annotated, proj
-            )
-
-        ground_point = proj
-        ground_point[2] = 0
-
-        history.append(ground_point)
-
-        point = numpy.average(history, axis=0)
-
-        left_frame_annotated = draw_square_on_ground(
-            left_frame_annotated, point
-        )
+        #         tag_coords = localiser.get_coords(left_tag, right_tag)
+        #
+        #         print(tag_coords)
+        #
+        #         for p in tag_coords:
+        #             left_frame_annotated = localiser.circle_3d(left_frame_annotated, p)
+        #
+        #         tip = tag_coords[1]
+        #
+        #         knuckle = tag_coords[2]
+        #
+        #         dif = tip - knuckle
+        #
+        #         proj = numpy.copy(tip)
+        #
+        #         for i in range(100):
+        #             proj += dif
+        #
+        #             if proj[2] < 0:
+        #                 break
+        #
+        #             left_frame_annotated = localiser.circle_3d(
+        #                 left_frame_annotated, proj
+        #             )
+        #
+        #         ground_point = proj
+        #         ground_point[2] = 0
+        #
+        #         history.append(ground_point)
+        #
+        #         point = numpy.average(history, axis=0)
+        #
+        #         left_frame_annotated = draw_square_on_ground(
+        #             left_frame_annotated, point
+        #          )
 
         # left_frame_annotated = localiser.line_3d(
         #     left_frame_annotated, [tag_coords[8], point], colour=(0, 0, 255)
