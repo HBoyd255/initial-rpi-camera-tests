@@ -154,7 +154,7 @@ class Localiser:
         pixel_coords = numpy.array(landmarks * [width, height], dtype=int)
 
         cv2.polylines(
-            drawing_frame, [pixel_coords], isClosed=True, color=colour
+            drawing_frame, [pixel_coords], isClosed=False, color=colour
         )
 
         return drawing_frame

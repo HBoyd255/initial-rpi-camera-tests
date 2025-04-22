@@ -1,5 +1,5 @@
-from collections import namedtuple, deque
 import numpy
+from collections import deque
 from modules.eye import Eye
 from multiprocessing import Process, Queue
 
@@ -8,10 +8,22 @@ from modules.fps import FPS
 from modules.video import Video
 from modules.zoom import Zoom
 
-FrameStruct = namedtuple("FrameStruct", ["frame", "hand"])
+
+from typing import NamedTuple, cast
+from modules.hand import Hand
+
+
+class FrameStruct(NamedTuple):
+    frame: numpy.ndarray
+    hand: Hand
+
 
 left_queue = Queue(maxsize=1)
 right_queue = Queue(maxsize=1)
+
+# Cast for type checking and autocomplete
+left_queue = cast("Queue[FrameStruct]", left_queue)
+right_queue = cast("Queue[FrameStruct]", right_queue)
 
 localiser = Localiser()
 
