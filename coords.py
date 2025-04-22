@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, deque
 import numpy
 from modules.eye import Eye
 from multiprocessing import Process, Queue
@@ -54,6 +54,9 @@ def draw_square_on_ground(frame, ground_coord):
     )
 
     return drawing_frame
+
+
+history = deque(maxlen=10)
 
 
 def show():
@@ -113,10 +116,14 @@ def show():
             ground_point = proj
             ground_point[2] = 0
 
-            left_feed = draw_square_on_ground(left_feed, ground_point)
+            history.append(ground_point)
+
+            point = numpy.average(history, axis=0)
+
+            left_feed = draw_square_on_ground(left_feed, point)
 
             left_feed = localiser.line_3d(
-                left_feed, [hand_coords[8], ground_point], colour=(0, 0, 255)
+                left_feed, [hand_coords[8], point], colour=(0, 0, 255)
             )
 
         vid.show("Projection", left_feed)
