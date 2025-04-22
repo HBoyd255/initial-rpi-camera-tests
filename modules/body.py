@@ -77,4 +77,17 @@ class Body:
         line(23, 25)
         line(25, 27)
 
+        cv2.circle(drawing_frame, pixel_coords[16], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[14], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[12], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[11], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[13], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[15], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[28], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[26], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[24], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[23], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[25], 3, (0, 0, 255), -1)
+        cv2.circle(drawing_frame, pixel_coords[27], 3, (0, 0, 255), -1)
+
         return drawing_frame
