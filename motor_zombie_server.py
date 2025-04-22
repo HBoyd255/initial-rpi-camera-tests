@@ -22,7 +22,7 @@ server_socket.listen(1)
 print(f"Server started on {IP}:{PORT}")
 
 
-left_cam = Eye()
+
 
 
 fps = FPS()
@@ -38,6 +38,8 @@ parser.add_argument(
 args = parser.parse_args()
 
 if not args.blind:
+
+    left_cam = Eye()
 
     from modules.video import Video
     from threading import Thread
