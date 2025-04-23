@@ -9,9 +9,9 @@ from flask import Flask, Response
 
 class Video:
 
-    _PARAMS = [cv2.IMWRITE_JPEG_QUALITY, 50]
+    def __init__(self, local=False, canvas_framing=(3, 2), quality=50):
 
-    def __init__(self, local=False, canvas_framing=(3, 2)):
+        self._params = [cv2.IMWRITE_JPEG_QUALITY, quality]
 
         self._canvas_framing = canvas_framing
 
@@ -61,7 +61,7 @@ class Video:
 
                     frame = self._latest_frame
 
-                _, jpeg = cv2.imencode(".jpg", frame, self._PARAMS)
+                _, jpeg = cv2.imencode(".jpg", frame, self._params)
 
                 data = (
                     b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
