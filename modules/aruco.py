@@ -2,51 +2,23 @@ import numpy
 import cv2
 
 
-aruco_dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
-detector = cv2.aruco.ArucoDetector(aruco_dictionary)
-
-
 class Aruco:
 
-    def __init__(self, frame, seen_from_zoom=False):
+    def __init__(self, id, landmarks, seen_from_zoom=False):
 
-        if frame is None:
-            self._seen = False
-            return
-
-        corners, ids, _ = detector.detectMarkers(frame)
-
-        self._seen = ids is not None
-
-        if not self._seen:
-            return
-
-        height = len(frame)
-        width = len(frame[0])
-
-        self.landmarks = numpy.array(corners[0][0], dtype=float)
-
-        self.landmarks /= [width, height]
+        self.id = id
+        self.landmarks = landmarks
 
         self._seen_from_zoom = seen_from_zoom
 
     def get_centre(self):
 
-        if not self.is_seen():
-            raise Exception("No tag seen")
-
         # In between the top left and bottom right corner.
         return (self.landmarks[0] + self.landmarks[2]) / 2
-
-    def is_seen(self):
-        return self._seen
 
     def draw(self, frame: numpy.ndarray):
 
         drawing_frame = numpy.copy(frame)
-
-        if not self.is_seen():
-            return drawing_frame
 
         height = len(drawing_frame)
         width = len(drawing_frame[0])
@@ -77,7 +49,44 @@ class Aruco:
 
     def __str__(self):
 
-        if not self.is_seen():
-            return "No tag Seen."
+        return f"Aruco tag: {self.id}"
 
-        return "Tag Seen."
+
+aruco_dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+detector = cv2.aruco.ArucoDetector(aruco_dictionary)
+
+
+def aruco_list(frame, seen_from_zoom=False):
+
+    list_of_aruco = []
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    corners, ids, _ = detector.detectMarkers(gray)
+
+    if ids is None or len(ids) == 0:
+        return list_of_aruco
+
+    height = len(frame)
+    width = len(frame[0])
+
+    normalised_ids = numpy.array(ids)[:, 0]
+
+    normalised_corners = numpy.array(corners, dtype=float)
+
+    landmarks_list = normalised_corners[:, 0, :, :] / [width, height]
+
+    sort_order = numpy.argsort(normalised_ids)
+
+    sorted_ids = normalised_ids[sort_order]
+    sorted_landmark_list = landmarks_list[sort_order]
+
+    for i, id in enumerate(sorted_ids):
+
+        new_aruco = Aruco(
+            id, sorted_landmark_list[i], seen_from_zoom=seen_from_zoom
+        )
+
+        list_of_aruco.append(new_aruco)
+
+    return list_of_aruco

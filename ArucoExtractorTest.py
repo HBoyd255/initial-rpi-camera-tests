@@ -1,4 +1,5 @@
 import numpy
+from modules.aruco import aruco_list
 from modules.eye import Eye
 
 
@@ -18,16 +19,25 @@ vid = Video()
 
 tag_finder = ZoomAruco()
 
+
 while True:
+
+    print(fps)
 
     frame = eye.array(res="full")
 
-    tag = tag_finder.get_tag(frame)
+    tags = tag_finder.get_tags(frame)
+
+    # tags = aruco_list(frame)
 
     frame = numpy.array(frame[::4, ::4])
 
     frame = tag_finder.draw_zoom_outline(frame)
 
-    frame = tag.draw(frame)
+    for tag in tags:
+        frame = tag.draw(frame)
+        print(tag.id, end=" ")
+
+    print()
 
     vid.show("frame", frame)

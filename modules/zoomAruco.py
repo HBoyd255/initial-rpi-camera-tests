@@ -3,7 +3,7 @@ import cv2
 import mediapipe
 import numpy
 
-from modules.aruco import Aruco
+from modules.aruco import Aruco, aruco_list
 from modules.fps import FPS
 
 
@@ -35,11 +35,11 @@ class ZoomAruco:
             min_detection_confidence=0.5,
         )
 
-        self._last_seen_tag = Aruco(None)
+        self._last_seen_tag_list = []
 
     def get_from_fov(self, frame_th) -> Aruco:
 
-        tag_from_full = Aruco(frame_th, seen_from_zoom=False)
+        tag_from_full = aruco_list(frame_th)
 
         return tag_from_full
 
@@ -56,17 +56,18 @@ class ZoomAruco:
             off_x - bound_x : off_x + bound_x,
         ]
 
-        tag_from_zoom = Aruco(zoom_frame, seen_from_zoom=True)
+        tags_from_zoom = aruco_list(zoom_frame, seen_from_zoom=True)
 
-        if tag_from_zoom.is_seen():
+        if tags_from_zoom:
+            self._evaluate_zoom_use(numpy.copy(tags_from_zoom[0].landmarks))
 
-            self._evaluate_zoom_use(numpy.copy(tag_from_zoom.landmarks))
+        for tag in tags_from_zoom:
 
-            tag_from_zoom.landmarks /= 4
-            tag_from_zoom.landmarks += self._zoom_coords
-            tag_from_zoom.landmarks -= numpy.array([1 / 8, 1 / 8])
+            tag.landmarks /= 4
+            tag.landmarks += self._zoom_coords
+            tag.landmarks -= numpy.array([1 / 8, 1 / 8])
 
-        return tag_from_zoom
+        return tags_from_zoom
 
     def _recenter_from_tag(self, tag: Aruco):
 
@@ -104,7 +105,7 @@ class ZoomAruco:
         if numpy.max(max_) > 1:
             self.use_zoom = False
 
-    def get_tag(self, full_res_frame, simple=False) -> Aruco:
+    def get_tags(self, full_res_frame) -> list[Aruco]:
 
         if self.resolution_full is None:
 
@@ -119,18 +120,9 @@ class ZoomAruco:
             full_res_frame[::4, ::4], dtype=numpy.uint8
         )
 
-        if simple:
-            return self.get_from_fov(full_fov_thumb)
-
         if self._concurrent_failures > DROP_THRESHOLD:
 
-            print(fps)
-
-            # time.sleep(0.5)
-
             cf = self._concurrent_failures
-
-            # cf = 13
 
             x_o = cf % 7
             y_o = cf // 7 % 7
@@ -139,52 +131,52 @@ class ZoomAruco:
 
             self._zoom_coords = numpy.array([((x_o + 1) / 8), ((y_o + 1) / 8)])
 
-            tag = self.get_from_zoom(full_res_frame)
+            tags = self.get_from_zoom(full_res_frame)
 
             # print(tag)
 
-            if tag.is_seen():
+            if tags:
                 self._concurrent_failures = 0
-                self._last_seen_tag = tag
-                return tag
+                self._last_seen_tag_list = tags
+                return tags
 
             self.use_zoom = False
 
         if self.use_zoom is False:
-            tag = self.get_from_fov(full_fov_thumb)
+            tags = self.get_from_fov(full_fov_thumb)
 
-            if tag.is_seen():
-                self._recenter_from_tag(tag)
+            if tags:
+                self._recenter_from_tag(tags[0])
                 self._concurrent_failures = 0
-                self._last_seen_tag = tag
-                return tag
+                self._last_seen_tag_list = tags
+                return tags
 
             self._concurrent_failures += 1
             self.use_zoom = True
 
             if self._concurrent_failures < DROP_THRESHOLD:
-                return self._last_seen_tag
+                return self._last_seen_tag_list
 
-            return tag
+            return tags
 
         else:
-            tag = self.get_from_zoom(full_res_frame)
+            tags = self.get_from_zoom(full_res_frame)
 
-            if tag.is_seen():
-                self._recenter_from_tag(tag)
+            if tags:
+                self._recenter_from_tag(tags[0])
 
                 self._concurrent_failures = 0
-                self._last_seen_tag = tag
-                return tag
+                self._last_seen_tag_list = tags
+                return tags
 
         self._concurrent_failures += 1
 
         # If no Aruco tags where found, return a blank tag.
 
         if self._concurrent_failures <= DROP_THRESHOLD:
-            return self._last_seen_tag
+            return self._last_seen_tag_list
 
-        return Aruco(None)
+        return []
 
     def draw_zoom_outline(self, frame):
 
