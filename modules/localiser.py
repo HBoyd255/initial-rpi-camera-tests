@@ -121,8 +121,6 @@ class Localiser:
 
     def circle_3d(self, frame, coord_3d):
 
-        print("CIRCLE")
-
         drawing_frame = numpy.copy(frame)
 
         height = len(drawing_frame)
@@ -131,15 +129,9 @@ class Localiser:
         if coord_3d[1] < 0:
             return drawing_frame
 
-        print(coord_3d)
-
         landmark = self._3d_to_landmark(coord_3d)
 
-        print(landmark)
-
         pixel_coords = numpy.array(landmark * [width, height], dtype=int)
-
-        print(pixel_coords)
 
         cv2.circle(drawing_frame, pixel_coords, 3, (255, 0, 0), -1)
 
