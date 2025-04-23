@@ -1,10 +1,7 @@
-import time
 import cv2
-import mediapipe
 import numpy
 
 from modules.aruco import Aruco, aruco_list
-from modules.fps import FPS
 
 
 LEFT_INDEX = 15
@@ -26,24 +23,17 @@ class ZoomAruco:
 
         self._zoom_coords = numpy.array([1 / 8, 1 / 8])
 
-        self._left_is_dominant = True
-
         self._concurrent_failures = 0
-
-        self._pose_mp = mediapipe.solutions.pose.Pose(
-            static_image_mode=True,
-            min_detection_confidence=0.5,
-        )
 
         self._last_seen_tag_list = []
 
-    def get_from_fov(self, frame_th) -> Aruco:
+    def get_from_fov(self, frame_th) -> list[Aruco]:
 
         tag_from_full = aruco_list(frame_th)
 
         return tag_from_full
 
-    def get_from_zoom(self, frame_f) -> Aruco:
+    def get_from_zoom(self, frame_f) -> list[Aruco]:
 
         off_x = int(self._zoom_coords[0] * self.resolution_full[0])
         off_y = int(self._zoom_coords[1] * self.resolution_full[1])

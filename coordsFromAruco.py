@@ -1,21 +1,28 @@
 import numpy
 from collections import deque
 from modules.eye import Eye
-from multiprocessing import Process, Queue
 
 from modules.localiser import Localiser
 from modules.fps import FPS
 from modules.video import Video
 
 
-from typing import List, NamedTuple, cast
+from typing import NamedTuple, cast
 from modules.aruco import Aruco
 from modules.zoomAruco import ZoomAruco
+
+USE_THREADS = False
+
+if USE_THREADS:
+    from threading import Thread
+    from queue import Queue
+else:
+    from multiprocessing import Process, Queue
 
 
 class FrameStruct(NamedTuple):
     frame: numpy.ndarray
-    aruco_list: List[Aruco]
+    aruco_list: list[Aruco]
 
 
 left_queue = Queue(maxsize=1)
@@ -98,70 +105,101 @@ def show():
 
         del left_feed, right_feed
 
-        left_frame_annotated = numpy.copy(left_frame)
+        left_ids = {tag.id for tag in left_tags}
+        right_ids = {tag.id for tag in right_tags}
 
-        # print(fps)
+        common_ids = left_ids & right_ids
 
-        if not left_tags or not right_tags:
+        common_left_tags = [tag for tag in left_tags if tag.id in common_ids]
+        common_right_tags = [tag for tag in right_tags if tag.id in common_ids]
+
+        if not common_left_tags or not common_right_tags:
+            print("Tags Missing")
             continue
 
-        print("left")
-        for tag in left_tags:
-            print(tag.id, end=",")
-        print()
-        for tag in right_tags:
-            print(tag.id, end=",")
-        print()
+        left_frame_an = numpy.copy(left_frame)
 
-        tag_coords = localiser.get_coords(left_tags[0], right_tags[0])
-
-        print(tag_coords)
-
-        for p in tag_coords:
-            left_frame_annotated = localiser.circle_3d(left_frame_annotated, p)
-
-        tip = tag_coords[1]
-
-        knuckle = tag_coords[2]
-
-        dif = tip - knuckle
-
-        proj = numpy.copy(tip)
-
-        for i in range(100):
-            proj += dif
-
-            if proj[2] < 0:
-                break
-
-            left_frame_annotated = localiser.circle_3d(
-                left_frame_annotated, proj
+        if 19 in common_ids:
+            left_tag = next(
+                (tag for tag in common_left_tags if tag.id == 19), None
             )
+            right_tag = next(
+                (tag for tag in common_right_tags if tag.id == 19), None
+            )
+        else:
+            left_tag = common_left_tags[0]
+            right_tag = common_right_tags[0]
 
-        ground_point = proj
-        ground_point[2] = 0
+        tag_coords = localiser.get_coords(left_tag, right_tag)
 
-        history.append(ground_point)
+        v1 = tag_coords[1] - tag_coords[0]
+        v2 = tag_coords[3] - tag_coords[0]
 
-        point = numpy.average(history, axis=0)
+        cross = numpy.cross(v1, v2)
 
-        left_frame_annotated = draw_square_on_ground(
-            left_frame_annotated, point
-        )
+        normal = cross / numpy.linalg.norm(cross)
 
-        # left_frame_annotated = localiser.line_3d(
-        #     left_frame_annotated, [tag_coords[8], point], colour=(0, 0, 255)
-        # )
+        normal = -normal
 
-        vid.show("Projection", left_frame_annotated)
+        length = numpy.linalg.norm(v1)
+
+        proj_points = tag_coords + (normal * length)
+
+        left_frame_an = localiser.circle_3d(left_frame_an, proj_points[0])
+        left_frame_an = localiser.circle_3d(left_frame_an, proj_points[1])
+        left_frame_an = localiser.circle_3d(left_frame_an, proj_points[2])
+        left_frame_an = localiser.circle_3d(left_frame_an, proj_points[3])
+
+        left_frame_an = localiser.line_3d(left_frame_an, proj_points)
+        left_frame_an = localiser.line_3d(left_frame_an, [proj_points[0],proj_points[3]])
+
+        print()
+
+        y_coords = tag_coords[:, 1]
+
+        min_ = numpy.min(y_coords)
+        max_ = numpy.max(y_coords)
+
+        print(y_coords)
+        print(max_ - min_)
+
+        v1 = tag_coords[0] - tag_coords[3]
+        v2 = tag_coords[1] - tag_coords[2]
+
+        proj1 = numpy.copy(tag_coords[0])
+
+        proj2 = numpy.copy(tag_coords[1])
+
+        #         # else:
+        #         for i in range(100):
+        #             proj1 += v1
+        #             proj2 += v2
+        #
+        #             if proj1[2] < 0:
+        #                 break
+        #
+        #             left_frame_an = localiser.circle_3d(left_frame_an, proj1)
+        #             left_frame_an = localiser.circle_3d(left_frame_an, proj2)
+        #
+        #         for p in tag_coords:
+        #             left_frame_an = localiser.circle_3d(left_frame_an, p)
+
+        vid.show("Projection", left_frame_an)
 
 
 if __name__ == "__main__":
 
-    left_thread = Process(target=capture_tag, args=("left", left_queue))
-    right_thread = Process(target=capture_tag, args=("right", right_queue))
+    if USE_THREADS:
+        left_thread = Thread(target=capture_tag, args=("left", left_queue))
+        right_thread = Thread(target=capture_tag, args=("right", right_queue))
+        display_thread = Thread(target=show)
 
-    display_thread = Process(target=show)
+    # use process
+    else:
+
+        left_thread = Process(target=capture_tag, args=("left", left_queue))
+        right_thread = Process(target=capture_tag, args=("right", right_queue))
+        display_thread = Process(target=show)
 
     left_thread.start()
     right_thread.start()
