@@ -2,6 +2,8 @@ import cv2
 import mediapipe
 import numpy
 
+from modules.colours import MAGENTA_BGR
+
 mp_drawing = mediapipe.solutions.drawing_utils
 mp_drawing_styles = mediapipe.solutions.drawing_styles
 mp_pose = mediapipe.solutions.pose
@@ -49,12 +51,9 @@ class Body:
             for coord in self.landmarks
         ]
 
-        colour = (255, 0, 255)
+        colour = MAGENTA_BGR
 
-        if small:
-            width = 1
-        else:
-            width = 3
+        width = 2
 
         def line(p1_index: int, p2_index: int):
             cv2.line(

@@ -1,6 +1,8 @@
 import numpy
 import cv2
 
+from modules.colours import *
+
 
 class Aruco:
 
@@ -29,21 +31,17 @@ class Aruco:
 
         pixel_coords = numpy.array(pixel_coords, dtype=int)
 
-        colour = (0, 0, 255)
-
         if self._seen_from_zoom:
-            colour = (0, 255, 0)
+            base_colour = GREEN_BGR
+        else:
+            base_colour = RED_BGR
 
-        cv2.circle(drawing_frame, pixel_coords[0], 3, colour, -1)
-        cv2.circle(drawing_frame, pixel_coords[1], 3, colour, -1)
-        cv2.circle(drawing_frame, pixel_coords[2], 3, colour, -1)
-        cv2.circle(drawing_frame, pixel_coords[3], 3, colour, -1)
+        for p in pixel_coords:
+            cv2.circle(drawing_frame, p, 3, base_colour, -1)
 
         point_list = [pixel_coords]
 
-        cv2.polylines(
-            drawing_frame, point_list, isClosed=True, color=(255, 0, 0)
-        )
+        cv2.polylines(drawing_frame, point_list, isClosed=True, color=BLUE_BGR)
 
         return drawing_frame
 

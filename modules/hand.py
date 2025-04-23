@@ -1,6 +1,8 @@
 import numpy
 import cv2
 
+from modules.colours import *
+
 
 class Hand:
 
@@ -61,7 +63,7 @@ class Hand:
         # Wrist
         # return self.landmarks[0]
 
-    def draw(self, frame: numpy.ndarray, small=False):
+    def draw(self, frame: numpy.ndarray):
 
         drawing_frame = numpy.copy(frame)
 
@@ -76,18 +78,15 @@ class Hand:
             for coord in self.landmarks
         ]
 
-        # Red
-        colour = (0, 0, 255)
-
         if self._seen_from_zoom:
-            colour = (0, 255, 0)
-
-        if small:
-            width = 1
+            base_colour = GREEN_BGR
         else:
-            width = 3
+            base_colour = RED_BGR
 
-        def line(p1_index: int, p2_index: int):
+        width = 2
+
+        def line(p1_index: int, p2_index: int, colour: numpy.ndarray):
+
             cv2.line(
                 drawing_frame,
                 pixel_coords[p1_index],
@@ -96,18 +95,45 @@ class Hand:
                 width,
             )
 
-        # Fingers
-        for x in range(3):
-            for finger in range(5):
-                line((finger * 4) + x + 1, (finger * 4) + x + 2)
+        for p in pixel_coords:
+            cv2.circle(drawing_frame, p, 3, base_colour, -1)
+
+        # Thumb
+        line(1, 2, THUMB_COLOUR_BGR)
+        line(2, 3, THUMB_COLOUR_BGR)
+        line(3, 4, THUMB_COLOUR_BGR)
+
+        # Index
+        line(5, 6, INDEX_COLOUR_BGR)
+        line(6, 7, INDEX_COLOUR_BGR)
+        line(7, 8, INDEX_COLOUR_BGR)
+
+        # Middle
+        line(9, 10, MIDDLE_COLOUR_BGR)
+        line(10, 11, MIDDLE_COLOUR_BGR)
+        line(11, 12, MIDDLE_COLOUR_BGR)
+
+        # Ring
+        line(13, 14, RING_COLOUR_BGR)
+        line(14, 15, RING_COLOUR_BGR)
+        line(15, 16, RING_COLOUR_BGR)
+
+        # Ring
+        line(17, 18, PINKY_COLOUR_BGR)
+        line(18, 19, PINKY_COLOUR_BGR)
+        line(19, 20, PINKY_COLOUR_BGR)
+
         # Wrist to knuckles
-        line(0, 1)
-        line(0, 5)
-        line(0, 17)
+        line(0, 1, PALM_COLOUR_BGR)
+        line(0, 5, PALM_COLOUR_BGR)
+        line(0, 17, PALM_COLOUR_BGR)
 
         # Knuckles to each other
-        line(5, 9)
-        line(9, 13)
-        line(13, 17)
+        line(5, 9, PALM_COLOUR_BGR)
+        line(9, 13, PALM_COLOUR_BGR)
+        line(13, 17, PALM_COLOUR_BGR)
+
+        for p in pixel_coords:
+            cv2.circle(drawing_frame, p, 1, WHITE, -1)
 
         return drawing_frame

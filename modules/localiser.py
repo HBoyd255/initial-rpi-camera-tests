@@ -1,6 +1,7 @@
 import cv2
 import numpy
 
+from modules.colours import *
 from modules.physical import FOCAL_LENGTH_MM, SENSORS_SIZE, STEREO_BASELINE_M
 
 
@@ -119,7 +120,7 @@ class Localiser:
 
         return landmark
 
-    def circle_3d(self, frame, coord_3d):
+    def circle_3d(self, frame, coord_3d, colour=BLUE_BGR):
 
         drawing_frame = numpy.copy(frame)
 
@@ -133,11 +134,11 @@ class Localiser:
 
         pixel_coords = numpy.array(landmark * [width, height], dtype=int)
 
-        cv2.circle(drawing_frame, pixel_coords, 3, (255, 0, 0), -1)
+        cv2.circle(drawing_frame, pixel_coords, 3, colour, -1)
 
         return drawing_frame
 
-    def line_3d(self, frame, coord_3d, colour=(255, 0, 255)):
+    def line_3d(self, frame, coord_3d, colour=MAGENTA_BGR):
 
         drawing_frame = numpy.copy(frame)
 

@@ -1,16 +1,24 @@
 import numpy
-from collections import deque
+from modules.colours import *
 from modules.eye import Eye
-from multiprocessing import Process, Queue
 
 from modules.localiser import Localiser
 from modules.fps import FPS
+from modules.topDown import TopDown
 from modules.video import Video
 from modules.zoom import Zoom
 
 
 from typing import NamedTuple, cast
 from modules.hand import Hand
+
+USE_THREADS = False
+
+if USE_THREADS:
+    from threading import Thread
+    from queue import Queue
+else:
+    from multiprocessing import Process, Queue
 
 
 class FrameStruct(NamedTuple):
@@ -29,6 +37,11 @@ localiser = Localiser()
 
 
 fps = FPS()
+
+top_down = TopDown(
+    x_range=(-0.2, 0.2),
+    y_range=(0.30, 0.7),
+)
 
 
 def capture_hand(side: str, queue: Queue):
@@ -68,9 +81,6 @@ def draw_square_on_ground(frame, ground_coord):
     return drawing_frame
 
 
-history = deque(maxlen=10)
-
-
 def show():
 
     vid = Video(canvas_framing=(2, 2))
@@ -92,6 +102,10 @@ def show():
         vid.show("Left Feed", left_feed)
         vid.show("Right Feed", right_feed)
 
+        del left_feed, right_feed
+
+        frame_an = numpy.copy(left_frame)
+
         print(fps)
 
         if not (left_hand.is_seen() and right_hand.is_seen()):
@@ -99,54 +113,51 @@ def show():
 
         hand_coords = localiser.get_coords(left_hand, right_hand)
 
-        print(hand_coords[8])
+        top_down.add_hand_points(hand_coords)
 
-        for i in range(21):
+        for p in hand_coords:
+            frame_an = localiser.circle_3d(frame_an, p)
+            top_down.add_point(p)
 
-            p = hand_coords[i]
+        centre = (hand_coords[0] + hand_coords[9]) / 2
 
-            left_feed = localiser.circle_3d(left_feed, p)
+        v1 = hand_coords[5] - hand_coords[0]
+        v2 = hand_coords[17] - hand_coords[0]
 
-        tip = hand_coords[8]
+        cross = numpy.cross(v1, v2)
 
-        knuckle = hand_coords[5]
+        normal = cross / numpy.linalg.norm(cross)
 
-        dif = tip - knuckle
+        tip = centre + (normal * 0.1)
 
-        proj = numpy.copy(tip)
+        frame_an = localiser.circle_3d(frame_an, centre, colour=GREEN_BGR)
+        top_down.add_point(centre, colour=GREEN_NORMAL)
 
-        if dif[2] < 0:
+        frame_an = localiser.circle_3d(frame_an, tip, colour=MAGENTA_BGR)
+        top_down.add_point(tip, colour=MAGENTA_NORMAL)
 
-            while True:
-                proj += dif
+        top_down.add_point(p)
 
-                if proj[2] < 0:
-                    break
+        vid.show("Projection", frame_an)
 
-                left_feed = localiser.circle_3d(left_feed, proj)
+        top_down_image = top_down.get_image()
 
-            ground_point = proj
-            ground_point[2] = 0
-
-            history.append(ground_point)
-
-            point = numpy.average(history, axis=0)
-
-            left_feed = draw_square_on_ground(left_feed, point)
-
-            left_feed = localiser.line_3d(
-                left_feed, [hand_coords[8], point], colour=(0, 0, 255)
-            )
-
-        vid.show("Projection", left_feed)
+        vid.show("Top Down", top_down_image)
 
 
 if __name__ == "__main__":
 
-    left_thread = Process(target=capture_hand, args=("left", left_queue))
-    right_thread = Process(target=capture_hand, args=("right", right_queue))
+    if USE_THREADS:
+        left_thread = Thread(target=capture_hand, args=("left", left_queue))
+        right_thread = Thread(target=capture_hand, args=("right", right_queue))
+        display_thread = Thread(target=show)
 
-    display_thread = Process(target=show)
+    # use process
+    else:
+
+        left_thread = Process(target=capture_hand, args=("left", left_queue))
+        right_thread = Process(target=capture_hand, args=("right", right_queue))
+        display_thread = Process(target=show)
 
     left_thread.start()
     right_thread.start()

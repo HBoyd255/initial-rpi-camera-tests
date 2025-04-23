@@ -8,8 +8,6 @@ LEFT_INDEX = 15
 RIGHT_INDEX = 16
 
 
-RED = (0, 0, 255)
-
 DROP_THRESHOLD = 30
 
 
@@ -186,10 +184,10 @@ class ZoomAruco:
         start_y = pixel_coords[1] - (height // 8)
         end_y = pixel_coords[1] + (height // 8)
 
-        cv2.line(drawing_frame, (start_x, start_y), (start_x, end_y), RED, 1)
-        cv2.line(drawing_frame, (end_x, start_y), (end_x, end_y), RED, 1)
+        cv2.line(drawing_frame, (start_x, start_y), (start_x, end_y), RED_BGR, 1)
+        cv2.line(drawing_frame, (end_x, start_y), (end_x, end_y), RED_BGR, 1)
 
-        cv2.line(drawing_frame, (start_x, start_y), (end_x, start_y), RED, 1)
-        cv2.line(drawing_frame, (start_x, end_y), (end_x, end_y), RED, 1)
+        cv2.line(drawing_frame, (start_x, start_y), (end_x, start_y), RED_BGR, 1)
+        cv2.line(drawing_frame, (start_x, end_y), (end_x, end_y), RED_BGR, 1)
 
         return drawing_frame

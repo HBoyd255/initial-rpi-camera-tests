@@ -2,15 +2,13 @@ import cv2
 import mediapipe
 import numpy
 
+from modules.colours import RED_BGR
 from modules.hand import Hand
 from modules.body import Body
 
 
 LEFT_INDEX = 15
 RIGHT_INDEX = 16
-
-
-RED = (0, 0, 255)
 
 
 class Zoom:
@@ -233,10 +231,14 @@ class Zoom:
         start_y = pixel_coords[1] - (height // 8)
         end_y = pixel_coords[1] + (height // 8)
 
-        cv2.line(drawing_frame, (start_x, start_y), (start_x, end_y), RED, 1)
-        cv2.line(drawing_frame, (end_x, start_y), (end_x, end_y), RED, 1)
+        cv2.line(
+            drawing_frame, (start_x, start_y), (start_x, end_y), RED_BGR, 1
+        )
+        cv2.line(drawing_frame, (end_x, start_y), (end_x, end_y), RED_BGR, 1)
 
-        cv2.line(drawing_frame, (start_x, start_y), (end_x, start_y), RED, 1)
-        cv2.line(drawing_frame, (start_x, end_y), (end_x, end_y), RED, 1)
+        cv2.line(
+            drawing_frame, (start_x, start_y), (end_x, start_y), RED_BGR, 1
+        )
+        cv2.line(drawing_frame, (start_x, end_y), (end_x, end_y), RED_BGR, 1)
 
         return drawing_frame
