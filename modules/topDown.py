@@ -1,7 +1,8 @@
+import time
 import cv2
 import numpy
 
-from modules.colours import *
+from colours import *
 
 # from video import Video
 
@@ -23,16 +24,41 @@ class TopDown:
 
         # Sort the x range in reverse order.
         y_plot_range = numpy.sort(y_plot_range)
-        self._y_plot_range = y_plot_range[::-1]
+        y_plot_range = y_plot_range[::-1]
 
         # Sort the x range in forward order.
-        self._x_plot_range = numpy.sort(x_plot_range)
+        x_plot_range = numpy.sort(x_plot_range)
 
-        self._frame_width = 576
-        self._frame_height = 324
+        margin = 50
 
-        self._y_pixel_edges = [50, self._frame_height - 50]
-        self._x_pixel_edges = [50, self._frame_width - 50]
+        self._frame_size = (576, 324)
+
+        self._pixel_edges = numpy.array(
+            (
+                [margin, self._frame_size[0] - margin],
+                [margin, self._frame_size[1] - margin],
+            )
+        )
+
+        frame_range = numpy.array(
+            (
+                self._pixel_edges[0][1] - self._pixel_edges[0][0],
+                self._pixel_edges[1][1] - self._pixel_edges[1][0],
+            )
+        )
+
+        plot_range = numpy.array(
+            (
+                numpy.max(x_plot_range) - numpy.min(x_plot_range),
+                numpy.max(y_plot_range) - numpy.min(y_plot_range),
+            )
+        )
+
+        self.scale_coefficient = frame_range / plot_range
+        self.plot_min = numpy.array(
+            (numpy.min(x_plot_range), numpy.min(y_plot_range))
+        )
+        self.pixel_min = numpy.array((margin, margin))
 
         self._create()
 
@@ -40,16 +66,16 @@ class TopDown:
 
         self._image = (
             numpy.ones(
-                (self._frame_height, self._frame_width, 3), dtype=numpy.uint8
+                (self._frame_size[1], self._frame_size[0], 3), dtype=numpy.uint8
             )
             * 255
         )
 
-        sx = numpy.min(self._x_pixel_edges)
-        ex = numpy.max(self._x_pixel_edges)
+        sx = numpy.min(self._pixel_edges[0])
+        ex = numpy.max(self._pixel_edges[0])
 
-        sy = numpy.min(self._y_pixel_edges)
-        ey = numpy.max(self._y_pixel_edges)
+        sy = numpy.min(self._pixel_edges[1])
+        ey = numpy.max(self._pixel_edges[1])
 
         p1 = numpy.array([sx, sy])
         p2 = numpy.array([ex, sy])
@@ -76,30 +102,18 @@ class TopDown:
 
     def _convert_coord(self, old_coord):
 
-        old_y = old_coord[0]
-        old_x = old_coord[1]
+        old_coord = numpy.array(old_coord)
 
-        plot_ry = numpy.max(self._y_plot_range) - numpy.min(self._y_plot_range)
-        frame_ry = numpy.max(self._y_pixel_edges) - numpy.min(
-            self._y_pixel_edges
-        )
+        old_coord_reshaped = numpy.array(old_coord[[1, 0]])
 
-        plot_min_y = numpy.min(self._y_plot_range)
-        pixel_min_y = numpy.min(self._y_pixel_edges)
+        # print(self.scale_coefficient)
 
-        new_y = int(((old_y - plot_min_y) * frame_ry / plot_ry) + pixel_min_y)
+        new_point = (
+            ((old_coord_reshaped - self.plot_min) * self.scale_coefficient)
+            + self.pixel_min
+        ).astype(int)
 
-        plot_rx = numpy.max(self._x_plot_range) - numpy.min(self._x_plot_range)
-        frame_rx = numpy.max(self._x_pixel_edges) - numpy.min(
-            self._x_pixel_edges
-        )
-
-        plot_min_x = numpy.min(self._x_plot_range)
-        pixel_min_x = numpy.min(self._x_pixel_edges)
-
-        new_x = int(((old_x - plot_min_x) * frame_rx / plot_rx) + pixel_min_x)
-
-        return [new_x, new_y]
+        return new_point
 
     def add_point(self, point, colour=BLACK):
 
@@ -127,22 +141,19 @@ class TopDown:
     def add_hand_points(self, hand_coords):
 
         thumb = hand_coords[1:5]
-        self.add_line(thumb, colour=THUMB_COLOUR)
-
         index = hand_coords[5:9]
-        self.add_line(index, colour=INDEX_COLOUR)
-
         middle = hand_coords[9:13]
-        self.add_line(middle, colour=MIDDLE_COLOUR)
-
         ring = hand_coords[13:17]
-        self.add_line(ring, colour=RING_COLOUR)
-
         pinky = hand_coords[17:21]
 
+        palm = hand_coords[[1, 0, 5, 9, 13, 17, 0]]
+
+        self.add_line(thumb, colour=THUMB_COLOUR)
+        self.add_line(index, colour=INDEX_COLOUR)
+        self.add_line(middle, colour=MIDDLE_COLOUR)
+        self.add_line(ring, colour=RING_COLOUR)
         self.add_line(pinky, colour=PINKY_COLOUR)
 
-        palm = hand_coords[[1, 0, 5, 9, 13, 17, 0]]
         self.add_line(palm, colour=PALM_COLOUR)
 
     def get_image(self):
@@ -152,3 +163,5 @@ class TopDown:
         self._create()
 
         return image
+
+
