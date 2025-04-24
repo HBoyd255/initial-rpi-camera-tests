@@ -159,7 +159,7 @@ class Zoom:
 
         if self._concurrent_failures > 3:
 
-            print("Recapturing Body")
+            # print("Recapturing Body")
             self._left_is_dominant = not self._left_is_dominant
             body = self._get_pose(full_fov_thumb)
 
