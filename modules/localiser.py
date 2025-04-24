@@ -2,7 +2,8 @@ import cv2
 import numpy
 
 from modules.colours import *
-from modules.physical import FOCAL_LENGTH_MM, SENSORS_SIZE, STEREO_BASELINE_M
+from modules.evaluateVariable import evaluate_variable
+from modules.physical import FOCAL_LENGTH_MM, SENSOR_SIZE, STEREO_BASELINE_M
 
 
 def camera_to_global(points):
@@ -56,7 +57,7 @@ class Localiser:
         self,
     ):
         self._distance_numerator = (
-            FOCAL_LENGTH_MM / SENSORS_SIZE[0] * STEREO_BASELINE_M
+            FOCAL_LENGTH_MM / SENSOR_SIZE[0] * STEREO_BASELINE_M
         )
 
     def get_disparities(self, left_eye_hand, right_eye_hand):
@@ -87,7 +88,7 @@ class Localiser:
 
         landmarks[:, 1] = 0 - landmarks[:, 1]
 
-        sensor_landmarks = SENSORS_SIZE * landmarks
+        sensor_landmarks = SENSOR_SIZE * landmarks
 
         x_vals = sensor_landmarks[:, 0] * distances / FOCAL_LENGTH_MM
         y_vals = distances
@@ -114,11 +115,32 @@ class Localiser:
 
         sensor_landmark = numpy.array([sensor_x, sensor_y])
 
-        landmark = sensor_landmark / SENSORS_SIZE
+        landmark = sensor_landmark / SENSOR_SIZE
 
         landmark += [0.5, 0.5]
 
         return landmark
+
+    def _3d_to_landmark_list(self, coord_3d_list):
+
+        cam_coords = global_to_camera(coord_3d_list)
+
+        x_vals = cam_coords[:, 0]
+        y_vals = cam_coords[:, 1]
+        z_vals = cam_coords[:, 2]
+
+        sensor_x = (x_vals / y_vals) * FOCAL_LENGTH_MM
+        sensor_y = (z_vals / y_vals) * FOCAL_LENGTH_MM
+
+        sensor_y = 0 - sensor_y
+
+        sensor_landmark = numpy.column_stack([sensor_x, sensor_y])
+
+        landmarks = sensor_landmark / SENSOR_SIZE
+
+        landmarks += [0.5, 0.5]
+
+        return landmarks
 
     def circle_3d(self, frame, coord_3d, colour=BLUE):
 
@@ -138,6 +160,33 @@ class Localiser:
 
         return drawing_frame
 
+    def circle_3d_list(self, frame, coord_list, colour=BLUE):
+
+        drawing_frame = numpy.copy(frame)
+
+        height = len(drawing_frame)
+        width = len(drawing_frame[0])
+
+        # TODO add removal of negative y values.
+        # if coord_list[1] < 0:
+        #     return drawing_frame
+
+        landmarks = self._3d_to_landmark_list(coord_list)
+
+        landmarks_x = landmarks[:, 0]
+        landmarks_y = landmarks[:, 1]
+
+        pixels_x = (landmarks_x * width).astype(int)
+        pixels_y = (landmarks_y * height).astype(int)
+
+        pixel_coords = numpy.column_stack([pixels_x, pixels_y])
+
+        for p in pixel_coords:
+
+            cv2.circle(drawing_frame, p, 3, colour, -1)
+
+        return drawing_frame
+
     def line_3d(self, frame, coord_3d, colour=MAGENTA):
 
         drawing_frame = numpy.copy(frame)
@@ -150,9 +199,9 @@ class Localiser:
         if numpy.min(coord_3d[:, 1]) < 0:
             return drawing_frame
 
-        landmarks = numpy.array([self._3d_to_landmark(c) for c in coord_3d])
+        landmarks = self._3d_to_landmark_list(coord_3d)
 
-        pixel_coords = numpy.array(landmarks * [width, height], dtype=int)
+        pixel_coords = (landmarks * (width, height)).astype(int)
 
         cv2.polylines(
             drawing_frame, [pixel_coords], isClosed=False, color=colour

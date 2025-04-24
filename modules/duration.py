@@ -4,7 +4,9 @@ import time
 
 class Duration:
 
-    def __init__(self):
+    def __init__(self, kill=False):
+
+        self._kill = kill
 
         self._calls = []
 
@@ -54,6 +56,9 @@ class Duration:
 
     def head(self):
 
+        if self._kill:
+            return
+
         frame = inspect.stack()[1]
         filepath = frame.filename
         line_number = frame.lineno
@@ -69,6 +74,9 @@ class Duration:
         self._calls.append((time.time(), head_line))
 
     def flag(self):
+
+        if self._kill:
+            return
 
         frame = inspect.stack()[1]
         filepath = frame.filename

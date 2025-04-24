@@ -1,10 +1,7 @@
-import time
 import cv2
 import numpy
 
-from colours import *
-
-# from video import Video
+from modules.colours import *
 
 
 class TopDown:
@@ -106,8 +103,6 @@ class TopDown:
 
         old_coord_reshaped = numpy.array(old_coord[[1, 0]])
 
-        # print(self.scale_coefficient)
-
         new_point = (
             ((old_coord_reshaped - self.plot_min) * self.scale_coefficient)
             + self.pixel_min
@@ -163,5 +158,3 @@ class TopDown:
         self._create()
 
         return image
-
-
