@@ -120,7 +120,7 @@ class Localiser:
 
         return landmark
 
-    def circle_3d(self, frame, coord_3d, colour=BLUE_BGR):
+    def circle_3d(self, frame, coord_3d, colour=BLUE):
 
         drawing_frame = numpy.copy(frame)
 
@@ -138,7 +138,7 @@ class Localiser:
 
         return drawing_frame
 
-    def line_3d(self, frame, coord_3d, colour=MAGENTA_BGR):
+    def line_3d(self, frame, coord_3d, colour=MAGENTA):
 
         drawing_frame = numpy.copy(frame)
 

@@ -2,7 +2,7 @@ import cv2
 import mediapipe
 import numpy
 
-from modules.colours import MAGENTA_BGR
+from modules.colours import MAGENTA
 
 mp_drawing = mediapipe.solutions.drawing_utils
 mp_drawing_styles = mediapipe.solutions.drawing_styles
@@ -51,7 +51,7 @@ class Body:
             for coord in self.landmarks
         ]
 
-        colour = MAGENTA_BGR
+        colour = MAGENTA
 
         width = 2
 
