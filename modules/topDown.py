@@ -9,11 +9,11 @@ class TopDown:
     _CONE_POINTS = numpy.array([[-5, 4, 0], [0, 0, 0], [5, 4, 0]])
     _ROBOT_POINTS = numpy.array(
         [
-            [-0.135, -0.28, 0],
-            [0.135, -0.28, 0],
-            [0.135, 0.05, 0],
-            [-0.135, 0.05, 0],
-            [-0.135, -0.28, 0],
+            [-0.087, -0.28, 0],
+            [0.183, -0.28, 0],
+            [0.183, 0.05, 0],
+            [-0.087, 0.05, 0],
+            [-0.087, -0.28, 0],
         ]
     )
 
@@ -44,12 +44,20 @@ class TopDown:
             )
         )
 
+        frame_aspect_ratio = frame_range[0] / frame_range[1]
+
+        print(frame_aspect_ratio)
+
         plot_range = numpy.array(
             (
                 numpy.max(x_plot_range) - numpy.min(x_plot_range),
                 numpy.max(y_plot_range) - numpy.min(y_plot_range),
             )
         )
+
+        plot_aspect_ratio = plot_range[0] / plot_range[1]
+
+        print(plot_aspect_ratio)
 
         self.scale_coefficient = frame_range / plot_range
         self.plot_min = numpy.array(
@@ -150,6 +158,16 @@ class TopDown:
         self.add_line(pinky, colour=PINKY_COLOUR)
 
         self.add_line(palm, colour=PALM_COLOUR)
+
+    def draw_radius(self, centre, radius):
+
+        center_conv = self._convert_coord(centre)
+
+        temp = (self.scale_coefficient * (radius, radius)).astype(int)
+
+        cv2.ellipse(self._image, center_conv, temp, 0, 0, 360, BLACK)
+
+        # print(center_conv)
 
     def get_image(self):
 

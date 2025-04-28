@@ -42,8 +42,8 @@ localiser = Localiser()
 fps = FPS()
 
 top_down = TopDown(
-    y_plot_range=(-0.2, 0.2),
-    x_plot_range=(0.30, 0.7),
+    # y_plot_range=(-0.2, 0.2),
+    # x_plot_range=(0.30, 0.7),
 )
 
 
@@ -82,10 +82,13 @@ def draw_square_on_ground(frame, ground_coord):
     point3 = ground_coord + [-0.1, -0.1, 0]
     point4 = ground_coord + [0.1, -0.1, 0]
 
-    drawing_frame = localiser.line_3d(
-        drawing_frame,
-        [point1, point2, point3, point4],
-    )
+    point_list = [point1, point2, point3, point4]
+
+    drawing_frame = localiser.line_3d(drawing_frame, point_list)
+
+    point_list.append(point1)
+
+    top_down.add_line(point_list, colour=MAGENTA)
 
     return drawing_frame
 
@@ -192,6 +195,8 @@ def show():
         frame_an = draw_square_on_ground(frame_an, ground_point)
 
         dura.flag()
+
+        top_down.add_line([hand_coords[8], ground_point], colour=MAGENTA)
 
         frame_an = localiser.line_3d(
             frame_an, [hand_coords[8], ground_point], colour=(0, 0, 255)

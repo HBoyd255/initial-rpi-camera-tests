@@ -144,6 +144,8 @@ class Localiser:
 
     def circle_3d(self, frame, coord_3d, colour=BLUE):
 
+        coord_3d = numpy.array(coord_3d, dtype=float)
+
         drawing_frame = numpy.copy(frame)
 
         height = len(drawing_frame)
