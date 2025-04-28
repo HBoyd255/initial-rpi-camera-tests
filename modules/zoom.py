@@ -13,7 +13,7 @@ RIGHT_INDEX = 16
 
 class Zoom:
 
-    def __init__(self, continuous=True):
+    def __init__(self, continuous=True, memory_count=1):
 
         self.use_zoom = False
         self._recapture_body = False
@@ -44,6 +44,8 @@ class Zoom:
             static_image_mode=True,
             min_detection_confidence=0.5,
         )
+
+        self._memory_count = memory_count
 
         self._last_hand_seen = Hand(None)
 
@@ -189,7 +191,7 @@ class Zoom:
             self._concurrent_failures += 1
             self.use_zoom = True
 
-            if self._concurrent_failures == 1:
+            if self._concurrent_failures <= self._memory_count:
                 return self._last_hand_seen
 
             return hand
@@ -208,7 +210,7 @@ class Zoom:
 
         # If no hands where found, return a blank hand.
 
-        if self._concurrent_failures == 1:
+        if self._concurrent_failures <= self._memory_count:
             return self._last_hand_seen
 
         return Hand(None)
@@ -231,14 +233,10 @@ class Zoom:
         start_y = pixel_coords[1] - (height // 8)
         end_y = pixel_coords[1] + (height // 8)
 
-        cv2.line(
-            drawing_frame, (start_x, start_y), (start_x, end_y), RED, 1
-        )
+        cv2.line(drawing_frame, (start_x, start_y), (start_x, end_y), RED, 1)
         cv2.line(drawing_frame, (end_x, start_y), (end_x, end_y), RED, 1)
 
-        cv2.line(
-            drawing_frame, (start_x, start_y), (end_x, start_y), RED, 1
-        )
+        cv2.line(drawing_frame, (start_x, start_y), (end_x, start_y), RED, 1)
         cv2.line(drawing_frame, (start_x, end_y), (end_x, end_y), RED, 1)
 
         return drawing_frame
