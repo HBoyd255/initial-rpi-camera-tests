@@ -1,5 +1,6 @@
 from collections import deque
 import time
+import cv2
 import numpy
 from modules.colours import *
 from modules.evaluateVariable import evaluate_variable
@@ -8,6 +9,7 @@ from modules.eye import Eye
 from modules.localiser import Localiser
 from modules.fps import FPS
 from modules.duration import Duration
+from modules.physical import *
 from modules.topDown import TopDown
 from modules.video import Video
 from modules.zoom import Zoom
@@ -47,6 +49,11 @@ fps = FPS()
 #     x_plot_range=(-0.25, 0.75),
 # )
 
+# top_down = TopDown(
+#     y_plot_range=(0.5, -1.5),
+#     x_plot_range=(-0.5, 4.5),
+# )
+
 top_down = TopDown(
     y_plot_range=(0.5, -1.5),
     x_plot_range=(-0.5, 4.5),
@@ -54,14 +61,12 @@ top_down = TopDown(
 
 history = deque(maxlen=10)
 
-dura = Duration(kill=True)
-
 
 def capture_hand(side: str, queue: Queue):
 
     eye = Eye(side)
 
-    hand_finder = Zoom()
+    hand_finder = Zoom(continuous=True)
     while True:
 
         if queue.full():
@@ -95,12 +100,16 @@ def draw_square_on_ground(frame, ground_coord):
 
     point_list.append(point1)
 
-    top_down.add_line(point_list, colour=MAGENTA)
+    top_down.add_line(point_list, colour=MAGENTA, width=1)
 
     return drawing_frame
 
 
-def main_loop(vid):
+dura = Duration(kill=True)
+
+
+def main_loop(vid: Video):
+
     if left_queue.empty() or right_queue.empty():
         return
 
@@ -115,12 +124,8 @@ def main_loop(vid):
     left_feed = left_hand.draw(left_feed)
     right_feed = right_hand.draw(right_feed)
 
-    dura.flag()
-
     vid.show("Left Feed", left_feed)
     vid.show("Right Feed", right_feed)
-
-    dura.flag()
 
     del left_feed, right_feed
 
@@ -129,87 +134,84 @@ def main_loop(vid):
     if not (left_hand.is_seen() and right_hand.is_seen()):
         return
 
-    dura.flag()
-
     raw_coords = localiser.get_coords(left_hand, right_hand)
 
-    history.append(raw_coords)
-    hand_coords = numpy.mean(history, axis=0)
+    # history.append(raw_coords)
+    # hand_coords = numpy.mean(history, axis=0)
 
-    dura.flag()
+    hand_coords = numpy.copy(raw_coords)
 
     top_down.add_hand_points(hand_coords)
 
-    dura.flag()
-
     frame_an = localiser.circle_3d_list(frame_an, hand_coords)
 
-    dura.flag()
+    # --------------------------------
+    wrist_3d = hand_coords[0]
+    writst_from_camera = wrist_3d - (0, 0, 0.192)
 
-    for p in hand_coords:
-        top_down.add_point(p)
+    wrist_r = numpy.linalg.norm(writst_from_camera)
 
-    dura.flag()
+    top_down.draw_radius((0, 0), wrist_r)
 
-    centre = (hand_coords[0] + hand_coords[9]) / 2
+    wrist_azm = numpy.arctan2(writst_from_camera[0], writst_from_camera[1])
+    wrist_elv = numpy.arcsin(writst_from_camera[2] / wrist_r)
+    wrist_projected = numpy.array((0.0, 0.0, 0.0))
 
-    v1 = hand_coords[5] - hand_coords[0]
-    v2 = hand_coords[17] - hand_coords[0]
+    wrist_projected[0] = wrist_r * numpy.cos(wrist_elv) * numpy.sin(wrist_azm)
+    wrist_projected[1] = wrist_r * numpy.cos(wrist_elv) * numpy.cos(wrist_azm)
+    wrist_projected[2] = (wrist_r * numpy.sin(wrist_elv)) + 0.192
 
-    cross = numpy.cross(v1, v2)
+    # print(wrist_3d)
+    # print(wrist_projected)
+    # print(wrist_projected - wrist_3d)
+    # print()
 
-    normal = cross / numpy.linalg.norm(cross)
+    # print(wrist_projected)
 
-    tip = centre + (normal * 0.1)
+    top_down.add_point(wrist_projected, colour=RED)
+    frame_an = localiser.circle_3d(frame_an, wrist_projected, colour=RED)
 
-    frame_an = localiser.circle_3d(frame_an, centre, colour=GREEN)
-    top_down.add_point(centre, colour=GREEN)
+    tip_3d = hand_coords[8]
+    tip_from_camera = tip_3d - (0, 0, 0.192)
 
-    frame_an = localiser.circle_3d(frame_an, tip, colour=MAGENTA)
-    top_down.add_point(tip, colour=MAGENTA)
+    tip_r = numpy.linalg.norm(tip_from_camera)
 
-    dura.flag()
+    top_down.draw_radius((0, 0), wrist_r)
 
-    tip = hand_coords[8]
+    tip_azm = numpy.arctan2(tip_from_camera[0], tip_from_camera[1])
+    tip_elv = numpy.arcsin(tip_from_camera[2] / tip_r)
 
-    knuckle = hand_coords[5]
+    tip_projected = numpy.array((0.0, 0.0, 0.0))
 
-    dif = tip - knuckle
+    tip_projected[0] = wrist_r * numpy.cos(tip_elv) * numpy.sin(tip_azm)
+    tip_projected[1] = wrist_r * numpy.cos(tip_elv) * numpy.cos(tip_azm)
+    tip_projected[2] = (wrist_r * numpy.sin(tip_elv)) + 0.192
 
-    proj = numpy.copy(tip)
+    top_down.add_point(tip_projected, colour=RED)
+    frame_an = localiser.circle_3d(frame_an, tip_projected, colour=RED)
 
-    dotted_line = []
+    projected_finger_v = tip_projected - wrist_projected
 
-    for i in range(100):
-        proj += dif
+    projected_finger_length = numpy.linalg.norm(projected_finger_v)
 
-        if proj[2] < 0:
-            break
+    # print(projected_finger_length)
 
-        dotted_line.append(numpy.copy(proj))
+    finger_azm = numpy.arctan2(projected_finger_v[0], projected_finger_v[1])
+    finger_elv = numpy.arcsin(projected_finger_v[2] / projected_finger_length)
 
-    ground_point = proj
-    ground_point[2] = 0
+    # top_down.add_line(((0, 0, 0), proj_wrist_point), width=1)
 
-    dura.flag()
-
-    if dotted_line:
-        frame_an = localiser.circle_3d_list(frame_an, dotted_line)
-
-    dura.flag()
-    frame_an = draw_square_on_ground(frame_an, ground_point)
-
-    dura.flag()
-
-    top_down.add_line([hand_coords[8], ground_point], colour=MAGENTA)
-
-    frame_an = localiser.line_3d(
-        frame_an, [hand_coords[8], ground_point], colour=(0, 0, 255)
-    )
-
-    dura.flag()
-
-    vid.show("Projection", frame_an)
+    #         tip_ang_h = (tip_2d[0] - 0.5) * HORIZONTAL_FOV_DEGREES
+    #
+    #         proj_tip_point = [0, 0, 0]
+    #         proj_tip_point[0] = top_down_r * numpy.sin(numpy.radians(tip_ang_h))
+    #         proj_tip_point[1] = top_down_r * numpy.cos(numpy.radians(tip_ang_h))
+    #         top_down.add_point(proj_tip_point)
+    #         top_down.add_line(((0, 0, 0), proj_tip_point), width=1)
+    #
+    #         top_down.draw_radius(proj_wrist_point, 0.17)
+    #
+    #         dura.flag()
 
     points_to_add = (
         (0, 0, 0),
@@ -224,15 +226,68 @@ def main_loop(vid):
         (-0.9, 3.6, 0),
     )
 
+    frame_an = localiser.circle_3d_list(frame_an, points_to_add)
+
     for p in points_to_add:
 
         top_down.add_point(p)
+
+    cv2.putText(
+        frame_an,
+        f"Finger = {projected_finger_length:.4}",
+        (30, 100),
+        cv2.FONT_HERSHEY_TRIPLEX,
+        1.5,
+        (0, 0, 255),
+        2,
+    )
+    cv2.putText(
+        frame_an,
+        f"Angle = {numpy.rad2deg(finger_azm):.4}",
+        (30, 200),
+        cv2.FONT_HERSHEY_TRIPLEX,
+        1.5,
+        (0, 0, 255),
+        2,
+    )
+
+    dotted_line = []
+
+    proj = numpy.copy(tip_projected)
+    dif = numpy.copy(projected_finger_v)
+
+    for i in range(100):
+        proj += dif
+
+        if proj[2] < 0:
+            break
+
+        dotted_line.append(numpy.copy(proj))
+
+    ground_point = proj
+    ground_point[2] = 0
+
+    if dotted_line:
+        frame_an = localiser.circle_3d_list(frame_an, dotted_line)
+
+    top_down.add_line([tip_projected, ground_point], colour=MAGENTA, width=1)
+
+    frame_an = localiser.line_3d(
+        frame_an, [tip_projected, ground_point], colour=(0, 0, 255)
+    )
+
+    dura.flag()
+    frame_an = draw_square_on_ground(frame_an, ground_point)
+
+    vid.show("Projection", frame_an)
 
     top_down_image = top_down.get_image()
 
     vid.show("Top Down", top_down_image)
 
-    print(fps)
+    dura.flag()
+
+    # print(fps)
 
 
 def show():

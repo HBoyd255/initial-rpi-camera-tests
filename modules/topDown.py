@@ -126,7 +126,7 @@ class TopDown:
 
         # self._ax.plot(point[1], , color=colour, marker="o")
 
-    def add_line(self, points, colour=BLACK):
+    def add_line(self, points, colour=BLACK, width=3):
 
         new_points = []
 
@@ -138,7 +138,11 @@ class TopDown:
         # print(new_points)
 
         cv2.polylines(
-            self._image, [new_points], isClosed=False, color=colour, thickness=3
+            self._image,
+            [new_points],
+            isClosed=False,
+            color=colour,
+            thickness=width,
         )
 
     def add_hand_points(self, hand_coords):
@@ -151,11 +155,11 @@ class TopDown:
 
         palm = hand_coords[[1, 0, 5, 9, 13, 17, 0]]
 
-        self.add_line(thumb, colour=THUMB_COLOUR)
-        self.add_line(index, colour=INDEX_COLOUR)
-        self.add_line(middle, colour=MIDDLE_COLOUR)
-        self.add_line(ring, colour=RING_COLOUR)
         self.add_line(pinky, colour=PINKY_COLOUR)
+        self.add_line(ring, colour=RING_COLOUR)
+        self.add_line(middle, colour=MIDDLE_COLOUR)
+        self.add_line(index, colour=INDEX_COLOUR)
+        self.add_line(thumb, colour=THUMB_COLOUR)
 
         self.add_line(palm, colour=PALM_COLOUR)
 

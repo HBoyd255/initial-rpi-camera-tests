@@ -3,6 +3,7 @@ import numpy
 
 from modules.colours import *
 from modules.evaluateVariable import evaluate_variable
+from modules.hand import Hand
 from modules.physical import FOCAL_LENGTH_MM, SENSOR_SIZE, STEREO_BASELINE_M
 
 
@@ -76,7 +77,7 @@ class Localiser:
 
         return distances
 
-    def get_coords(self, left_hand, right_hand):
+    def get_coords(self, left_hand: Hand, right_hand: Hand):
 
         # Get the coordinates using the pinhole method
 
@@ -94,7 +95,7 @@ class Localiser:
         y_vals = distances
         z_vals = sensor_landmarks[:, 1] * distances / FOCAL_LENGTH_MM
 
-        coords_cam = numpy.column_stack([x_vals, y_vals, z_vals])
+        coords_cam = numpy.column_stack((x_vals, y_vals, z_vals))
 
         coords_global = camera_to_global(coords_cam)
 
