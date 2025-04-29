@@ -1,24 +1,56 @@
-import cv2
-import mediapipe
+import time
 import numpy
 from modules.eye import Eye
 
 from modules.fps import FPS
 from modules.video import Video
+from modules.zoom import Zoom
 
 
-camera = Eye()
-vid = Video()
+from typing import NamedTuple, cast
+from modules.hand import Hand
 
-mp_hands = mediapipe.solutions.hands
-mp_drawing = mediapipe.solutions.drawing_utils
-mp_drawing_styles = mediapipe.solutions.drawing_styles
-hands = mp_hands.Hands(
-    static_image_mode=False,
-    max_num_hands=1,
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5,
-)
+USE_THREADS = False
+
+if USE_THREADS:
+    from threading import Thread
+    from queue import Queue
+else:
+    from multiprocessing import Process, Queue
+
+
+class FrameStruct(NamedTuple):
+    frame: numpy.ndarray
+    hand: Hand
+
+
+left_queue = Queue(maxsize=1)
+left_queue = cast("Queue[FrameStruct]", left_queue)
+
+
+fps = FPS()
+
+
+def capture_hand(side: str, queue: Queue):
+
+    eye = Eye(side)
+
+    hand_finder = Zoom()
+    while True:
+
+        if queue.full():
+            time.sleep(0.01)
+
+        frame = eye.array(res="full")
+
+        hand = hand_finder.get_hand(frame, simple=False)
+
+        frame = numpy.array(frame[::4, ::4])
+
+        frame = hand_finder.draw_zoom_outline(frame)
+
+        queue.put(FrameStruct(frame, hand))
+
 
 GESTURES = [""] * 32
 GESTURES[0b00000] = "Fist"
@@ -93,107 +125,61 @@ def is_pointed(landmarks: list, finger_index: int) -> bool:
     return bend <= bend_threshold
 
 
-def process_image(frame: numpy.ndarray) -> tuple[str, numpy.ndarray]:
+def get_gesture(hand: Hand):
 
-    # Convert to RGB
-    RGB_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    gesture_index = 0
 
-    results = hands.process(RGB_frame)
+    gesture_index |= is_pointed(hand.landmarks, 0) << 0
+    gesture_index |= is_pointed(hand.landmarks, 1) << 1
+    gesture_index |= is_pointed(hand.landmarks, 2) << 2
+    gesture_index |= is_pointed(hand.landmarks, 3) << 3
+    gesture_index |= is_pointed(hand.landmarks, 4) << 4
 
-    height = len(RGB_frame)
-    width = len(RGB_frame[0])
+    gesture = GESTURES[gesture_index]
 
-    if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
-
-            landmarks = hand_landmarks.landmark
-
-            coordinates = [
-                (int(landmark.x * width), int(landmark.y * height))
-                for landmark in landmarks
-            ]
-
-            mp_drawing.draw_landmarks(
-                RGB_frame,
-                hand_landmarks,
-                mp_hands.HAND_CONNECTIONS,
-                mp_drawing_styles.get_default_hand_landmarks_style(),
-                mp_drawing_styles.get_default_hand_connections_style(),
-            )
-
-            gesture_index = 0
-
-            #  Thumb
-            for x in range(5):
-                gesture_index |= is_pointed(coordinates, x) << x
-
-                knuckle_indexes = [2, 5, 9, 13, 17]
-
-                cv2.circle(
-                    RGB_frame,
-                    coordinates[knuckle_indexes[x]],
-                    10,
-                    (
-                        (0, 255, 0)
-                        if ((gesture_index >> x) & 1)
-                        else (255, 0, 0)
-                    ),
-                    5,
-                )
-
-            cv2.putText(
-                RGB_frame,
-                GESTURES[gesture_index],
-                coordinates[0],
-                cv2.FONT_HERSHEY_TRIPLEX,
-                0.5,
-                (0, 0, 255),
-                2,
-            )
-
-        BGR_frame = cv2.cvtColor(RGB_frame, cv2.COLOR_RGB2BGR)
-
-        return GESTURES[gesture_index], BGR_frame
-
-    return "NONE", frame
+    return gesture
 
 
-fps_counter = FPS()
+def main_loop(vid: Video):
+    if left_queue.empty():
+        return
+
+    left_frame, left_hand = left_queue.get()
+
+    left_feed = numpy.copy(left_frame)
+
+    left_feed = left_hand.draw(left_feed)
+
+    gesture = get_gesture(left_hand)
+
+    print(gesture)
+
+    vid.show("Left Feed", left_feed)
 
 
-def main() -> int:
+def show():
+
+    vid = Video(canvas_framing=(2, 2))
 
     while True:
 
-        frame = camera.array()
-
-        gesture, frame = process_image(frame)
-
-        vid.show("Frame", frame)
-
-        fps_counter.tick()
-
-        print(
-            f"P= {(fps_counter.get_processing_time() * 1000):.0f}MS "
-            f"FPS= {fps_counter.get_fps():.4}, "
-            f"Gesture= {gesture}"
-        )
+        main_loop(vid)
 
 
 if __name__ == "__main__":
-    main()
 
-# Colour formats
+    if USE_THREADS:
+        left_thread = Thread(target=capture_hand, args=("left", left_queue))
+        display_thread = Thread(target=show)
 
-# RGB images are the default for this project, as they are used by both the RPi
-# camera and Mediapipe. However, CV2 uses BGR for both reading from the camera
-# and displaying images.
+    # use process
+    else:
 
+        left_thread = Process(target=capture_hand, args=("left", left_queue))
+        display_thread = Process(target=show)
 
-# Frame rate
+    left_thread.start()
+    display_thread.start()
 
-# When plugged in, running headless, my laptop averages 28 FPS, while detecting
-# hands.
-
-# When running headless, the RPi 4B 8GB averages 4 FPS, while detecting hands.
-# This with or without an x-server running.
+    left_thread.join()
+    display_thread.join()
