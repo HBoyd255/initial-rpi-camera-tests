@@ -2,7 +2,9 @@ import time
 import numpy
 from modules.eye import Eye
 
+from modules.localiser import Localiser
 from modules.fps import FPS
+from modules.topDown import TopDown
 from modules.video import Video
 from modules.zoom import Zoom
 
@@ -25,10 +27,18 @@ class FrameStruct(NamedTuple):
 
 
 left_queue = Queue(maxsize=1)
+right_queue = Queue(maxsize=1)
+
+# Cast for type checking and autocomplete
 left_queue = cast("Queue[FrameStruct]", left_queue)
+right_queue = cast("Queue[FrameStruct]", right_queue)
+
+localiser = Localiser()
 
 
 fps = FPS()
+
+top_down = TopDown(x_plot_bounds=(-0.25, 0.75), draw_grid=False)
 
 
 def capture_hand(side: str, queue: Queue):
@@ -93,47 +103,58 @@ def finger_bend(A, B, C) -> float:
     B = numpy.array(B)
     C = numpy.array(C)
 
-    AB = B - A
-    BC = C - B
+    v1 = A - B
+    v2 = C - B
 
-    angle_AB = numpy.arctan2(*AB)
-    angle_BC = numpy.arctan2(*BC)
+    v1_mag = numpy.linalg.norm(v1)
+    v1_norm = v1 / v1_mag
 
-    angle_diff = angle_BC - angle_AB  # Radians
+    v2_mag = numpy.linalg.norm(v2)
+    v2_norm = v2 / v2_mag
 
-    # Normalize the angle to be between -pi and pi
-    angle_diff = numpy.mod(angle_diff + numpy.pi, 2 * numpy.pi) - numpy.pi
+    cos_theta = numpy.dot(v1_norm, v2_norm)
 
-    degrees = numpy.degrees(angle_diff)
+    cos_theta = numpy.clip(cos_theta, -1, 1)
 
-    return abs(degrees)
+    theta = numpy.arccos(cos_theta)
 
-
-def is_pointed(landmarks: list, finger_index: int) -> bool:
-
-    bend_threshold = 60
-
-    bend_indexes = [2, 6, 10, 14, 18]
-    tip_indexes = [4, 8, 12, 16, 20]
-
-    wrist = landmarks[0]
-    knuckle = landmarks[bend_indexes[finger_index]]
-    tip = landmarks[tip_indexes[finger_index]]
-
-    bend = finger_bend(wrist, knuckle, tip)
-
-    return bend <= bend_threshold
+    return theta
 
 
-def get_gesture(hand: Hand):
+def is_pointed(points_3d: list, finger_index: int) -> bool:
+
+    bend_thresholds = (120, 60, 60, 60, 60)
+
+    wrist_indexes = (17, 0, 0, 0, 0)
+    bend_indexes = (5, 6, 10, 14, 18)
+    tip_indexes = (4, 8, 12, 16, 20)
+
+    bend_threshold = bend_thresholds[finger_index]
+
+    wrist = points_3d[wrist_indexes[finger_index]]
+    knuckle = points_3d[bend_indexes[finger_index]]
+    tip = points_3d[tip_indexes[finger_index]]
+
+    bend_rads = finger_bend(wrist, knuckle, tip)
+
+    bend_deg = numpy.rad2deg(bend_rads)
+
+    finger_is_pointed = bend_deg > bend_threshold
+
+    return finger_is_pointed
+
+
+def get_gesture(hand_points):
+
+    hand_points = numpy.array(hand_points)
 
     gesture_index = 0
 
-    gesture_index |= is_pointed(hand.landmarks, 0) << 0
-    gesture_index |= is_pointed(hand.landmarks, 1) << 1
-    gesture_index |= is_pointed(hand.landmarks, 2) << 2
-    gesture_index |= is_pointed(hand.landmarks, 3) << 3
-    gesture_index |= is_pointed(hand.landmarks, 4) << 4
+    gesture_index |= is_pointed(hand_points, 0) << 0
+    gesture_index |= is_pointed(hand_points, 1) << 1
+    gesture_index |= is_pointed(hand_points, 2) << 2
+    gesture_index |= is_pointed(hand_points, 3) << 3
+    gesture_index |= is_pointed(hand_points, 4) << 4
 
     gesture = GESTURES[gesture_index]
 
@@ -141,20 +162,42 @@ def get_gesture(hand: Hand):
 
 
 def main_loop(vid: Video):
-    if left_queue.empty():
+    if left_queue.empty() or right_queue.empty():
         return
 
     left_frame, left_hand = left_queue.get()
+    right_frame, right_hand = right_queue.get()
 
     left_feed = numpy.copy(left_frame)
+    right_feed = numpy.copy(right_frame)
 
     left_feed = left_hand.draw(left_feed)
+    right_feed = right_hand.draw(right_feed)
 
-    gesture = get_gesture(left_hand)
+    vid.show("Left Feed", left_feed)
+    vid.show("Right Feed", right_feed)
+
+    del left_feed, right_feed
+
+    frame_an = numpy.copy(left_frame)
+
+    if not (left_hand.is_seen() and right_hand.is_seen()):
+        return
+
+    hand_coords = localiser.get_coords(left_hand, right_hand)
+
+    top_down.add_hand_points(hand_coords)
+    frame_an = localiser.circle_3d_list(frame_an, hand_coords)
+
+    gesture = get_gesture(hand_coords)
 
     print(gesture)
 
-    vid.show("Left Feed", left_feed)
+    vid.show("Projection", frame_an)
+
+    top_down_image = top_down.get_image()
+
+    vid.show("Top Down", top_down_image)
 
 
 def show():
@@ -170,16 +213,20 @@ if __name__ == "__main__":
 
     if USE_THREADS:
         left_thread = Thread(target=capture_hand, args=("left", left_queue))
+        right_thread = Thread(target=capture_hand, args=("right", right_queue))
         display_thread = Thread(target=show)
 
     # use process
     else:
 
         left_thread = Process(target=capture_hand, args=("left", left_queue))
+        right_thread = Process(target=capture_hand, args=("right", right_queue))
         display_thread = Process(target=show)
 
     left_thread.start()
+    right_thread.start()
     display_thread.start()
 
     left_thread.join()
+    right_thread.join()
     display_thread.join()

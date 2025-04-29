@@ -12,7 +12,7 @@ def camera_to_global(points):
 
     ELEVATION_OFFSET_DEGREES = 21
 
-    rotation_angle = numpy.radians(-ELEVATION_OFFSET_DEGREES)
+    rotation_angle = numpy.deg2rad(-ELEVATION_OFFSET_DEGREES)
 
     rotation_matrix = numpy.array(
         [
@@ -37,7 +37,7 @@ def global_to_camera(points):
 
     ELEVATION_OFFSET_DEGREES = 21
 
-    rotation_angle = numpy.radians(ELEVATION_OFFSET_DEGREES)
+    rotation_angle = numpy.deg2rad(ELEVATION_OFFSET_DEGREES)
 
     rotation_matrix = numpy.array(
         [
