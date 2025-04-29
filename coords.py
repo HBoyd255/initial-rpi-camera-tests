@@ -42,8 +42,8 @@ localiser = Localiser()
 fps = FPS()
 
 top_down = TopDown(
-    # y_plot_range=(-0.2, 0.2),
-    # x_plot_range=(0.30, 0.7),
+    y_plot_range=(0.5, -1.5),
+    x_plot_range=(-0.5, 4.5),
 )
 
 
@@ -93,124 +93,145 @@ def draw_square_on_ground(frame, ground_coord):
     return drawing_frame
 
 
+def main_loop(vid):
+    if left_queue.empty() or right_queue.empty():
+        return
+
+    dura.head()
+
+    left_frame, left_hand = left_queue.get()
+    right_frame, right_hand = right_queue.get()
+
+    left_feed = numpy.copy(left_frame)
+    right_feed = numpy.copy(right_frame)
+
+    left_feed = left_hand.draw(left_feed)
+    right_feed = right_hand.draw(right_feed)
+
+    dura.flag()
+
+    vid.show("Left Feed", left_feed)
+    vid.show("Right Feed", right_feed)
+
+    dura.flag()
+
+    del left_feed, right_feed
+
+    frame_an = numpy.copy(left_frame)
+
+    if not (left_hand.is_seen() and right_hand.is_seen()):
+        return
+
+    dura.flag()
+
+    hand_coords = localiser.get_coords(left_hand, right_hand)
+
+    dura.flag()
+
+    top_down.add_hand_points(hand_coords)
+
+    dura.flag()
+
+    frame_an = localiser.circle_3d_list(frame_an, hand_coords)
+
+    dura.flag()
+
+    for p in hand_coords:
+        top_down.add_point(p)
+
+    dura.flag()
+
+    centre = (hand_coords[0] + hand_coords[9]) / 2
+
+    v1 = hand_coords[5] - hand_coords[0]
+    v2 = hand_coords[17] - hand_coords[0]
+
+    cross = numpy.cross(v1, v2)
+
+    normal = cross / numpy.linalg.norm(cross)
+
+    tip = centre + (normal * 0.1)
+
+    frame_an = localiser.circle_3d(frame_an, centre, colour=GREEN)
+    top_down.add_point(centre, colour=GREEN)
+
+    frame_an = localiser.circle_3d(frame_an, tip, colour=MAGENTA)
+    top_down.add_point(tip, colour=MAGENTA)
+
+    dura.flag()
+
+    tip = hand_coords[8]
+
+    knuckle = hand_coords[5]
+
+    dif = tip - knuckle
+
+    proj = numpy.copy(tip)
+
+    dotted_line = []
+
+    for i in range(100):
+        proj += dif
+
+        if proj[2] < 0:
+            break
+
+        dotted_line.append(numpy.copy(proj))
+
+    ground_point = proj
+    ground_point[2] = 0
+
+    dura.flag()
+
+    if dotted_line:
+        frame_an = localiser.circle_3d_list(frame_an, dotted_line)
+
+    dura.flag()
+    frame_an = draw_square_on_ground(frame_an, ground_point)
+
+    dura.flag()
+
+    top_down.add_line([hand_coords[8], ground_point], colour=MAGENTA)
+
+    frame_an = localiser.line_3d(
+        frame_an, [hand_coords[8], ground_point], colour=(0, 0, 255)
+    )
+
+    dura.flag()
+
+    vid.show("Projection", frame_an)
+
+    points_to_add = (
+        (0, 0, 0),
+        (0, 0.9, 0),
+        (0, 1.8, 0),
+        (0, 2.7, 0),
+        (0, 3.6, 0),
+        (-0.9, 0, 0),
+        (-0.9, 0.9, 0),
+        (-0.9, 1.8, 0),
+        (-0.9, 2.7, 0),
+        (-0.9, 3.6, 0),
+    )
+
+    for p in points_to_add:
+
+        top_down.add_point(p)
+
+    top_down_image = top_down.get_image()
+
+    vid.show("Top Down", top_down_image)
+
+    print(fps)
+
+
 def show():
 
     vid = Video(canvas_framing=(2, 2))
 
     while True:
 
-        if left_queue.empty() or right_queue.empty():
-            continue
-
-        dura.head()
-
-        left_frame, left_hand = left_queue.get()
-        right_frame, right_hand = right_queue.get()
-
-        left_feed = numpy.copy(left_frame)
-        right_feed = numpy.copy(right_frame)
-
-        left_feed = left_hand.draw(left_feed)
-        right_feed = right_hand.draw(right_feed)
-
-        dura.flag()
-
-        vid.show("Left Feed", left_feed)
-        vid.show("Right Feed", right_feed)
-
-        dura.flag()
-
-        del left_feed, right_feed
-
-        frame_an = numpy.copy(left_frame)
-
-        if not (left_hand.is_seen() and right_hand.is_seen()):
-            continue
-
-        dura.flag()
-
-        hand_coords = localiser.get_coords(left_hand, right_hand)
-
-        dura.flag()
-
-        top_down.add_hand_points(hand_coords)
-
-        dura.flag()
-
-        frame_an = localiser.circle_3d_list(frame_an, hand_coords)
-
-        dura.flag()
-
-        for p in hand_coords:
-            top_down.add_point(p)
-
-        dura.flag()
-
-        centre = (hand_coords[0] + hand_coords[9]) / 2
-
-        v1 = hand_coords[5] - hand_coords[0]
-        v2 = hand_coords[17] - hand_coords[0]
-
-        cross = numpy.cross(v1, v2)
-
-        normal = cross / numpy.linalg.norm(cross)
-
-        tip = centre + (normal * 0.1)
-
-        frame_an = localiser.circle_3d(frame_an, centre, colour=GREEN)
-        top_down.add_point(centre, colour=GREEN)
-
-        frame_an = localiser.circle_3d(frame_an, tip, colour=MAGENTA)
-        top_down.add_point(tip, colour=MAGENTA)
-
-        dura.flag()
-
-        tip = hand_coords[8]
-
-        knuckle = hand_coords[5]
-
-        dif = tip - knuckle
-
-        proj = numpy.copy(tip)
-
-        dotted_line = []
-
-        for i in range(100):
-            proj += dif
-
-            if proj[2] < 0:
-                break
-
-            dotted_line.append(numpy.copy(proj))
-
-        ground_point = proj
-        ground_point[2] = 0
-
-        dura.flag()
-
-        if dotted_line:
-            frame_an = localiser.circle_3d_list(frame_an, dotted_line)
-
-        dura.flag()
-        frame_an = draw_square_on_ground(frame_an, ground_point)
-
-        dura.flag()
-
-        top_down.add_line([hand_coords[8], ground_point], colour=MAGENTA)
-
-        frame_an = localiser.line_3d(
-            frame_an, [hand_coords[8], ground_point], colour=(0, 0, 255)
-        )
-
-        dura.flag()
-
-        vid.show("Projection", frame_an)
-
-        top_down_image = top_down.get_image()
-
-        vid.show("Top Down", top_down_image)
-
-        print(fps)
+        main_loop(vid)
 
 
 if __name__ == "__main__":
