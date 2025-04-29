@@ -2,6 +2,7 @@ import time
 import numpy
 from modules.eye import Eye
 
+from modules.gesture import GestureClassifier
 from modules.localiser import Localiser
 from modules.fps import FPS
 from modules.topDown import TopDown
@@ -62,103 +63,7 @@ def capture_hand(side: str, queue: Queue):
         queue.put(FrameStruct(frame, hand))
 
 
-GESTURES = [""] * 32
-GESTURES[0b00000] = "Fist"
-GESTURES[0b00001] = "Thumb"
-GESTURES[0b00010] = "Index"
-GESTURES[0b00011] = "German Two"
-GESTURES[0b00100] = "Middle"
-GESTURES[0b00101] = "Middle and Thumb"
-GESTURES[0b00110] = "Peace"
-GESTURES[0b00111] = "German Three"
-GESTURES[0b01000] = "Ring"
-GESTURES[0b01001] = "Ring and Thumb"
-GESTURES[0b01010] = "Ring and Index"
-GESTURES[0b01011] = "Ring, Index and Thumb"
-GESTURES[0b01100] = "Ring and Middle"
-GESTURES[0b01101] = "Ring and Middle and Thumb"
-GESTURES[0b01110] = "American Three"
-GESTURES[0b01111] = "German Four"
-GESTURES[0b10000] = "Pinky"
-GESTURES[0b10001] = "Call Me"
-GESTURES[0b10010] = "Rock On"
-GESTURES[0b10011] = "Spider-man"
-GESTURES[0b10100] = "Middle and Pinky"
-GESTURES[0b10101] = "Pinky, Middle and Thumb"
-GESTURES[0b10110] = "Index, Middle and Pinky"
-GESTURES[0b10111] = "Index, Middle, Pinky and Thumb"
-GESTURES[0b11000] = "Pinky and Ring"
-GESTURES[0b11001] = "Pinky, Ring and Thumb"
-GESTURES[0b11010] = "Pinky, Ring and Index"
-GESTURES[0b11011] = "Pinky, Ring, Index and Thumb"
-GESTURES[0b11100] = "Pinky, Ring and Middle"
-GESTURES[0b11101] = "Pinky, Ring, Middle and Thumb"
-GESTURES[0b11110] = "American Four"
-GESTURES[0b11111] = "Halt"
-
-
-def finger_bend(A, B, C) -> float:
-
-    A = numpy.array(A)
-    B = numpy.array(B)
-    C = numpy.array(C)
-
-    v1 = A - B
-    v2 = C - B
-
-    v1_mag = numpy.linalg.norm(v1)
-    v1_norm = v1 / v1_mag
-
-    v2_mag = numpy.linalg.norm(v2)
-    v2_norm = v2 / v2_mag
-
-    cos_theta = numpy.dot(v1_norm, v2_norm)
-
-    cos_theta = numpy.clip(cos_theta, -1, 1)
-
-    theta = numpy.arccos(cos_theta)
-
-    return theta
-
-
-def is_pointed(points_3d: list, finger_index: int) -> bool:
-
-    bend_thresholds = (120, 60, 60, 60, 60)
-
-    wrist_indexes = (17, 0, 0, 0, 0)
-    bend_indexes = (5, 6, 10, 14, 18)
-    tip_indexes = (4, 8, 12, 16, 20)
-
-    bend_threshold = bend_thresholds[finger_index]
-
-    wrist = points_3d[wrist_indexes[finger_index]]
-    knuckle = points_3d[bend_indexes[finger_index]]
-    tip = points_3d[tip_indexes[finger_index]]
-
-    bend_rads = finger_bend(wrist, knuckle, tip)
-
-    bend_deg = numpy.rad2deg(bend_rads)
-
-    finger_is_pointed = bend_deg > bend_threshold
-
-    return finger_is_pointed
-
-
-def get_gesture(hand_points):
-
-    hand_points = numpy.array(hand_points)
-
-    gesture_index = 0
-
-    gesture_index |= is_pointed(hand_points, 0) << 0
-    gesture_index |= is_pointed(hand_points, 1) << 1
-    gesture_index |= is_pointed(hand_points, 2) << 2
-    gesture_index |= is_pointed(hand_points, 3) << 3
-    gesture_index |= is_pointed(hand_points, 4) << 4
-
-    gesture = GESTURES[gesture_index]
-
-    return gesture
+gest = GestureClassifier()
 
 
 def main_loop(vid: Video):
@@ -189,9 +94,10 @@ def main_loop(vid: Video):
     top_down.add_hand_points(hand_coords)
     frame_an = localiser.circle_3d_list(frame_an, hand_coords)
 
-    gesture = get_gesture(hand_coords)
+    gesture_id = gest.get_gesture_id(hand_coords)
+    gesture_name = gest.get_gesture_name(gesture_id)
 
-    print(gesture)
+    print(gesture_name)
 
     vid.show("Projection", frame_an)
 
