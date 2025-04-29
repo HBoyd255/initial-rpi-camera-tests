@@ -55,7 +55,7 @@ def capture_hand(side: str, queue: Queue):
     while True:
 
         if queue.full():
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         frame = eye.array(res="full")
 
