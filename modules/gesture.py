@@ -23,7 +23,7 @@ class GestureClassifier:
     _GESTURE_NAMES[0b10000] = "Pinky"
     _GESTURE_NAMES[0b10001] = "Call Me"
     _GESTURE_NAMES[0b10010] = "Rock On"
-    _GESTURE_NAMES[0b10011] = "Spider-man"
+    _GESTURE_NAMES[0b10011] = "Spider-Man"
     _GESTURE_NAMES[0b10100] = "Middle and Pinky"
     _GESTURE_NAMES[0b10101] = "Pinky, Middle and Thumb"
     _GESTURE_NAMES[0b10110] = "Index, Middle and Pinky"
