@@ -1,4 +1,5 @@
 import numpy
+import numbers
 
 
 class GestureClassifier:
@@ -98,5 +99,13 @@ class GestureClassifier:
 
         return gesture_index
 
-    def get_gesture_name(self, gesture_id: int) -> str:
-        return self._GESTURE_NAMES[gesture_id]
+    def get_gesture_name(self, input_data) -> str:
+
+        if isinstance(input_data, numbers.Integral):
+            return self._GESTURE_NAMES[input_data]
+        elif isinstance(input_data, (list, tuple, numpy.ndarray)):
+            gesture_id = self.get_gesture_id(input_data)
+            return self._GESTURE_NAMES[gesture_id]
+
+        return "No Idea"
+        # return self._GESTURE_NAMES[gesture_id]

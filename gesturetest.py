@@ -94,8 +94,8 @@ def main_loop(vid: Video):
     top_down.add_hand_points(hand_coords)
     frame_an = localiser.circle_3d_list(frame_an, hand_coords)
 
-    gesture_id = gest.get_gesture_id(hand_coords)
-    gesture_name = gest.get_gesture_name(gesture_id)
+    # gesture_id = gest.get_gesture_id(hand_coords)
+    gesture_name = gest.get_gesture_name(hand_coords)
 
     print(gesture_name)
 
