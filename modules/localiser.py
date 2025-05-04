@@ -81,6 +81,10 @@ class Localiser:
 
         # Get the coordinates using the pinhole method
 
+        if not left_hand.is_seen() or not right_hand.is_seen():
+            coords_global = numpy.full((21, 3), numpy.nan)
+            return coords_global
+
         landmarks = numpy.array(left_hand.landmarks)
         distances = numpy.array(self.get_distances(left_hand, right_hand))
 
