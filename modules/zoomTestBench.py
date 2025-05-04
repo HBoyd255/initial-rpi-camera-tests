@@ -19,7 +19,7 @@ class Zoom:
 
         self.resolution_full = None
 
-        self._zoom_coords = numpy.array([1 / 8, 1 / 8])
+        self._zoom_coords = numpy.array([2 / 8, 2 / 8])
 
         self._left_is_dominant = True
 
@@ -85,7 +85,6 @@ class Zoom:
 
         dif = self._zoom_coords - hand.get_centre()
 
-        dif /= 2
 
         self._zoom_coords -= dif
 
@@ -114,6 +113,9 @@ class Zoom:
         range_ = max_ - min_
 
         max_span = numpy.max(range_)
+
+        if max_span < 0.25:
+            self.use_zoom = True
 
         if max_span > 0.8:
             self.use_zoom = False
@@ -146,6 +148,9 @@ class Zoom:
 
             if hand.is_seen():
                 self._recenter_from_hand(hand)
+
+                self._evaluate_zoom_use(numpy.copy(hand.landmarks))
+
                 return hand
 
             self.use_zoom = True
