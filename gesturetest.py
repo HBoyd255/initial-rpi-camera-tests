@@ -7,7 +7,7 @@ from modules.localiser import Localiser
 from modules.fps import FPS
 from modules.topDown import TopDown
 from modules.video import Video
-from modules.zoom import Zoom
+from modules.zoomLive import Zoom
 
 
 from typing import NamedTuple, cast

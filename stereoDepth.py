@@ -10,7 +10,7 @@ from modules.hand import Hand
 from modules.localiser import Localiser
 from modules.wheels import Wheels
 from modules.video import Video
-from modules.zoom import Zoom
+from modules.zoomLive import Zoom
 
 mp_hands = mediapipe.solutions.hands
 mp_drawing = mediapipe.solutions.drawing_utils
