@@ -41,7 +41,7 @@ localiser = Localiser()
 
 fps = FPS()
 
-top_down = TopDown(x_plot_bounds=(-0.25, 0.75), draw_grid=False)
+top_down = TopDown(x_plot_bounds=(-0.25, 4), draw_grid=True)
 
 
 history = deque(maxlen=10)

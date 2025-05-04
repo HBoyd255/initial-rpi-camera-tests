@@ -225,8 +225,8 @@ def main_loop(vid: Video):
 
     user_is_pointing = gesture_name == "Index"
     double_point = gesture_name == "German Three"
-    # flipped_off = gesture_name == "Middle"
-    # is_spider_man = gesture_name == "Spider-Man"
+    flipped_off = gesture_name == "Middle"
+    is_spider_man = gesture_name == "Spider-Man"
     user_holding_fist = gesture_name == "Fist"
     puppy_dog_mode = gesture_name == "Rock On"
 
@@ -297,13 +297,13 @@ def main_loop(vid: Video):
 
             print()
 
-    #     if flipped_off:
-    #         print("Thats rude, im leaving")
-    #         wheel_control.send(-80, -80, -80, -80)
-    #
-    #     if is_spider_man:
-    #         print("I love Spider-Man")
-    #         wheel_control.send(80, 80, 80, 80)
+    if flipped_off:
+        print("Thats rude, im leaving")
+        wheel_control.send(-80, -80, -80, -80)
+
+    if is_spider_man:
+        print("I love Spider-Man")
+        wheel_control.send(80, 80, 80, 80)
 
     if user_holding_fist:
         match_angle(left_hand)
