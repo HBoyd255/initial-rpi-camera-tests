@@ -19,7 +19,7 @@ class Zoom:
 
         self.resolution_full = None
 
-        self._zoom_coords = numpy.array([2 / 8, 2 / 8])
+        self._zoom_coords = numpy.array([1 / 2, 3 / 4])
 
         self._left_is_dominant = True
 
