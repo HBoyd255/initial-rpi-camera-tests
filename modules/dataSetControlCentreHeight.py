@@ -4,7 +4,7 @@ import cv2
 import numpy
 
 
-class DataSetControl:
+class DataSetControlCentreHeight:
 
     def __init__(self):
         self._angles = tuple(range(0, 360, 10))
@@ -36,7 +36,7 @@ class DataSetControl:
             if zoom_state == "full_res":
                 target_directory_name = "non_continuous_full_res"
 
-        directory_local_path = f"data/predicted/{target_directory_name}"
+        directory_local_path = f"data/centre_height_predicted/{target_directory_name}"
 
         os.makedirs(directory_local_path, exist_ok=True)
 
@@ -59,7 +59,7 @@ class DataSetControl:
         else:
             target_directory_name = f"non_continuous_{zoom_state}"
 
-        file_name = f"data/predicted/{target_directory_name}/{distance}cm_{angle}_deg_predicted.txt"
+        file_name = f"data/centre_height_predicted/{target_directory_name}/{distance}cm_{angle}_deg_predicted.txt"
 
         return numpy.loadtxt(file_name, dtype=float, delimiter=",")
 
