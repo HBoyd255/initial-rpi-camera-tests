@@ -85,7 +85,6 @@ class Zoom:
 
         dif = self._zoom_coords - hand.get_centre()
 
-
         self._zoom_coords -= dif
 
         self._zoom_coords = numpy.clip(self._zoom_coords, 1 / 8, 7 / 8)
@@ -126,7 +125,7 @@ class Zoom:
         if numpy.max(max_) > 1:
             self.use_zoom = False
 
-    def get_hand(self, full_res_frame) -> Hand:
+    def get_hand(self, full_res_frame, simple=False, use_full=False) -> Hand:
 
         # TODO move into constants
 
@@ -142,6 +141,12 @@ class Zoom:
         full_fov_thumb = numpy.array(
             full_res_frame[::4, ::4], dtype=numpy.uint8
         )
+
+        if simple:
+            if use_full:
+                return self.get_from_fov(full_res_frame)
+            else:
+                return self.get_from_fov(full_fov_thumb)
 
         if self.use_zoom is False:
             hand = self.get_from_fov(full_fov_thumb)
