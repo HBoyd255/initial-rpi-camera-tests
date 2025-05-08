@@ -13,10 +13,13 @@ RIGHT_INDEX = 16
 
 class Zoom:
 
-    def __init__(self, continuous=True, memory_count=1):
+    def __init__(
+        self, continuous=True, memory_count=0, recalibration_threshold=3
+    ):
+
+        self.recalibration_threshold = recalibration_threshold
 
         self.use_zoom = False
-        self._recapture_body = False
 
         self.resolution_full = None
 
@@ -59,7 +62,7 @@ class Zoom:
 
         return hand_from_full
 
-    def get_from_zoom(self, frame_f, mute=False) -> Hand:
+    def get_from_zoom(self, frame_f) -> Hand:
 
         off_x = int(self._zoom_coords[0] * self.resolution_full[0])
         off_y = int(self._zoom_coords[1] * self.resolution_full[1])
@@ -159,25 +162,17 @@ class Zoom:
         if simple:
             return self.get_from_fov(full_fov_thumb)
 
-        if self._concurrent_failures > 3:
+        if self._concurrent_failures > self.recalibration_threshold:
 
             # print("Recapturing Body")
             self._left_is_dominant = not self._left_is_dominant
             body = self._get_pose(full_fov_thumb)
 
             if body.is_seen():
-                self._recapture_body = False
-
                 self._recenter_from_body(body, use_left=self._left_is_dominant)
-
-                hand = self.get_from_zoom(full_res_frame, mute=True)
-
-                if hand.is_seen():
-                    self._concurrent_failures = 0
-                    self._last_hand_seen = hand
-                    return hand
-
+            else:
                 self.use_zoom = False
+            
 
         if self.use_zoom is False:
             hand = self.get_from_fov(full_fov_thumb)
