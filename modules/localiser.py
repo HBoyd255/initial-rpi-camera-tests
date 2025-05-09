@@ -4,7 +4,7 @@ import numpy
 from modules.colours import *
 from modules.evaluateVariable import evaluate_variable
 from modules.hand import Hand
-from modules.physical import FOCAL_LENGTH_MM, SENSOR_SIZE, STEREO_BASELINE_M
+from modules.physical import FOCAL_LENGTH_M, SENSOR_SIZE, STEREO_BASELINE_M
 
 
 def camera_to_global(points):
@@ -58,10 +58,10 @@ class Localiser:
         self,
     ):
         self._distance_numerator = (
-            FOCAL_LENGTH_MM / SENSOR_SIZE[0] * STEREO_BASELINE_M
+            FOCAL_LENGTH_M / SENSOR_SIZE[0] * STEREO_BASELINE_M
         )
 
-    def get_disparities(self, left_eye_hand, right_eye_hand):
+    def get_disparities(self, left_eye_hand: Hand, right_eye_hand: Hand):
 
         disparities = (
             left_eye_hand.landmarks[:, 0] - right_eye_hand.landmarks[:, 0]
@@ -73,7 +73,9 @@ class Localiser:
 
         disparities = self.get_disparities(left_eye_hand, right_eye_hand)
 
-        distances = self._distance_numerator / disparities
+
+
+        distances = (FOCAL_LENGTH_M / SENSOR_SIZE[0] * STEREO_BASELINE_M) / disparities
 
         return distances
 
@@ -95,9 +97,9 @@ class Localiser:
 
         sensor_landmarks = SENSOR_SIZE * landmarks
 
-        x_vals = sensor_landmarks[:, 0] * distances / FOCAL_LENGTH_MM
+        x_vals = sensor_landmarks[:, 0] * distances / FOCAL_LENGTH_M
         y_vals = distances
-        z_vals = sensor_landmarks[:, 1] * distances / FOCAL_LENGTH_MM
+        z_vals = sensor_landmarks[:, 1] * distances / FOCAL_LENGTH_M
 
         coords_cam = numpy.column_stack((x_vals, y_vals, z_vals))
 
@@ -113,8 +115,8 @@ class Localiser:
         y_val = cam_coords[1]
         z_val = cam_coords[2]
 
-        sensor_x = x_val / y_val * FOCAL_LENGTH_MM
-        sensor_y = z_val / y_val * FOCAL_LENGTH_MM
+        sensor_x = x_val / y_val * FOCAL_LENGTH_M
+        sensor_y = z_val / y_val * FOCAL_LENGTH_M
 
         sensor_y = 0 - sensor_y
 
@@ -134,8 +136,8 @@ class Localiser:
         y_vals = cam_coords[:, 1]
         z_vals = cam_coords[:, 2]
 
-        sensor_x = (x_vals / y_vals) * FOCAL_LENGTH_MM
-        sensor_y = (z_vals / y_vals) * FOCAL_LENGTH_MM
+        sensor_x = (x_vals / y_vals) * FOCAL_LENGTH_M
+        sensor_y = (z_vals / y_vals) * FOCAL_LENGTH_M
 
         sensor_y = 0 - sensor_y
 
