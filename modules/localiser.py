@@ -4,7 +4,7 @@ import numpy
 from modules.colours import *
 from modules.evaluateVariable import evaluate_variable
 from modules.hand import Hand
-from modules.physical import FOCAL_LENGTH_M, SENSOR_SIZE, STEREO_BASELINE_M
+from modules.physical import FOCAL_LENGTH_M, SENSOR_SIZE_M, STEREO_BASELINE_M
 
 
 def camera_to_global(points):
@@ -58,7 +58,7 @@ class Localiser:
         self,
     ):
         self._distance_numerator = (
-            FOCAL_LENGTH_M / SENSOR_SIZE[0] * STEREO_BASELINE_M
+            FOCAL_LENGTH_M / SENSOR_SIZE_M[0] * STEREO_BASELINE_M
         )
 
     def get_disparities(self, left_eye_hand: Hand, right_eye_hand: Hand):
@@ -73,9 +73,7 @@ class Localiser:
 
         disparities = self.get_disparities(left_eye_hand, right_eye_hand)
 
-
-
-        distances = (FOCAL_LENGTH_M / SENSOR_SIZE[0] * STEREO_BASELINE_M) / disparities
+        distances = self._distance_numerator / disparities
 
         return distances
 
@@ -95,7 +93,7 @@ class Localiser:
 
         landmarks[:, 1] = 0 - landmarks[:, 1]
 
-        sensor_landmarks = SENSOR_SIZE * landmarks
+        sensor_landmarks = SENSOR_SIZE_M * landmarks
 
         x_vals = sensor_landmarks[:, 0] * distances / FOCAL_LENGTH_M
         y_vals = distances
@@ -122,7 +120,7 @@ class Localiser:
 
         sensor_landmark = numpy.array([sensor_x, sensor_y])
 
-        landmark = sensor_landmark / SENSOR_SIZE
+        landmark = sensor_landmark / SENSOR_SIZE_M
 
         landmark += [0.5, 0.5]
 
@@ -143,7 +141,7 @@ class Localiser:
 
         sensor_landmark = numpy.column_stack([sensor_x, sensor_y])
 
-        landmarks = sensor_landmark / SENSOR_SIZE
+        landmarks = sensor_landmark / SENSOR_SIZE_M
 
         landmarks += [0.5, 0.5]
 

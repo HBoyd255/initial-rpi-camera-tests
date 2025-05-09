@@ -1,9 +1,9 @@
 import numpy
 
-PIXEL_SIZE = numpy.array([1.4e-6, 1.4e-6])
+PIXEL_SIZE_M = numpy.array([1.4e-6, 1.4e-6])
 CAMERA_RESOLUTION = numpy.array([4608, 2592])
 
-SENSOR_SIZE = PIXEL_SIZE * CAMERA_RESOLUTION
+SENSOR_SIZE_M = PIXEL_SIZE_M * CAMERA_RESOLUTION
 # [0.0064512 0.0036288]
 # 6.5mm x 3.4mm
 
