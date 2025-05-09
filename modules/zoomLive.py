@@ -202,6 +202,7 @@ class Zoom:
                 return hand
 
         self._concurrent_failures += 1
+        self.use_zoom = False
 
         # If no hands where found, return a blank hand.
 

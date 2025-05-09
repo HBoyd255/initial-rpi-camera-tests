@@ -65,10 +65,12 @@ class GestureClassifier:
 
     def _is_pointed(self, points_3d: list, finger_index: int) -> bool:
 
+
+
         bend_thresholds = (120, 60, 60, 60, 60)
 
         wrist_indexes = (17, 0, 0, 0, 0)
-        bend_indexes = (5, 6, 10, 14, 18)
+        bend_indexes = (5, 5, 9, 13, 17)
         tip_indexes = (4, 8, 12, 16, 20)
 
         bend_threshold = bend_thresholds[finger_index]
@@ -80,6 +82,9 @@ class GestureClassifier:
         bend_rads = self._finger_bend(wrist, knuckle, tip)
 
         bend_deg = numpy.rad2deg(bend_rads)
+
+        if (finger_index == 3):
+            print(bend_deg)
 
         finger_is_pointed = bend_deg > bend_threshold
 
