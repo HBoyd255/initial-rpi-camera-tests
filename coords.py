@@ -92,6 +92,7 @@ def draw_square_on_ground(frame, ground_coord):
 
 def main_loop(vid: Video):
     if left_queue.empty() or right_queue.empty():
+        time.sleep(0.01)
         return
 
     left_frame, left_hand = left_queue.get()
@@ -122,29 +123,7 @@ def main_loop(vid: Video):
 
     frame_an = localiser.circle_3d_list(frame_an, hand_coords)
 
-    tip = hand_coords[8]
-
-    knuckle = hand_coords[5]
-
-    dif = tip - knuckle
-
-    proj = numpy.copy(tip)
-
-    dotted_line = []
-
-    for i in range(100):
-        proj += dif
-
-        if proj[2] < 0:
-            break
-
-        dotted_line.append(numpy.copy(proj))
-
-    ground_point = proj
-    ground_point[2] = 0
-
-    if dotted_line:
-        frame_an = localiser.circle_3d_list(frame_an, dotted_line)
+    ground_point = localiser.extract_point_of_interest(hand_coords)
 
     frame_an = draw_square_on_ground(frame_an, ground_point)
 

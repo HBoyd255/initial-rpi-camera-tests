@@ -10,7 +10,7 @@ from modules.zoomLive import Zoom
 vid = Video(canvas_framing=(1, 1))
 eye = Eye("left")
 
-hand_finder = Zoom(continuous=False)
+hand_finder = Zoom(continuous=True)
 
 
 hands_list = []
@@ -28,23 +28,27 @@ dura = Duration()
 
 dura.head()
 
-
-print("Time to load images from memory and convert to RGB")
-for i in range(100):
-
-    print(f"{i}/100")
-
-    frame = get_frame(i)
-    bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-dura.flag()
-
 print("Time to load images from memory and convert to RGB again")
 for i in range(100):
 
     print(f"{i}/100")
 
     frame = get_frame(i)
+
+    frame_small = numpy.array(frame[::4, ::4], dtype=numpy.uint8)
+
+    bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+dura.flag()
+print("Time to load images from memory and convert to RGB again")
+for i in range(100):
+
+    print(f"{i}/100")
+
+    frame = get_frame(i)
+
+    frame_small = numpy.array(frame[::4, ::4], dtype=numpy.uint8)
+
     bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 dura.flag()
@@ -89,34 +93,25 @@ count = numpy.sum(successes)
 print(successes)
 print(count)
 
+# Static mode
+# 75%
 
-# continuous=False
-
-
-# EvaluateZoom.py:40 -> EvaluateZoom.py:50 = 6941.76ms.
-# EvaluateZoom.py:50 -> EvaluateZoom.py:81 = 15154.96ms.
-
-
-# 15154.96ms - 6941.76ms = 8213.2ms
-
-# 8213.2 ms for for 100 images
-
-# 82.132 ms per frame
-
-# 12.1755223299 FPS
-# with 96% success
+# EvaluateZoom.py:29 -> EvaluateZoom.py:42 = 7433.44ms.
+# EvaluateZoom.py:42 -> EvaluateZoom.py:54 = 7246.88ms.
+# EvaluateZoom.py:54 -> EvaluateZoom.py:85 = 16596.01ms.
 
 
-# continuous=True
-
-# EvaluateZoom.py:42 -> EvaluateZoom.py:52 = 7004.83ms.
-# EvaluateZoom.py:52 -> EvaluateZoom.py:65 = 10373.51ms.
+# 9349.13 for 100
+# 93.49 for 1
 
 
-# 10373.51ms. - 7004.83ms. = 3368.68
+# Continuous Mode
+# 76% 
 
-# 3368.68 ms for 100 images
-# 33.6868 ms per frame.
+# EvaluateZoom.py:29 -> EvaluateZoom.py:42 = 7166.38ms.
+# EvaluateZoom.py:42 -> EvaluateZoom.py:54 = 7121.85ms.
+# EvaluateZoom.py:54 -> EvaluateZoom.py:85 = 12912.03ms.
 
-# 29.6852179489
-# with 96% success
+# 5790.18 for 100
+# 57.9018 for 1
+

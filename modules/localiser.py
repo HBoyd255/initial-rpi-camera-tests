@@ -215,3 +215,31 @@ class Localiser:
         )
 
         return drawing_frame
+
+    def extract_point_of_interest(self, hand_points):
+
+        hand_points_copy = numpy.copy(hand_points)
+
+        tip = hand_points_copy[8]
+        base = hand_points_copy[0]
+
+        # Set the starting point to the tip of the finger.
+        P = tip
+
+        # Set the direction vector from the knuckle to the finger tip.
+        D = tip - base
+
+        if D[2] > 0:
+            return numpy.array([0, 0, 0])
+
+        # G = P + D * t
+        # Where G is the point on the ground.
+        # and G[2] == 0
+        # P[2] + D[2] * t = 0
+        # Therefore
+
+        t = -P[2] / D[2]
+
+        G = P + D * t
+
+        return G
