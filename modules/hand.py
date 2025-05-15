@@ -80,10 +80,7 @@ class Hand:
         else:
             base_colour = RED
 
-        width = 2
-
-        for p in pixel_coords:
-            cv2.circle(drawing_frame, p, 3, base_colour, -1)
+        width = 4
 
         thumb = pixel_coords[1:5]
         index = pixel_coords[5:9]
@@ -94,17 +91,19 @@ class Hand:
         palm = pixel_coords[[1, 0, 17, 0, 5]]
         knuckles = pixel_coords[[5, 9, 13, 17]]
 
-        cv2.polylines(drawing_frame, [thumb], False, THUMB_COLOUR, width)
-        cv2.polylines(drawing_frame, [index], False, INDEX_COLOUR, width)
-        cv2.polylines(drawing_frame, [middle], False, MIDDLE_COLOUR, width)
-        cv2.polylines(drawing_frame, [ring], False, RING_COLOUR, width)
-        cv2.polylines(drawing_frame, [pinky], False, PINKY_COLOUR, width)
-
         cv2.polylines(
             drawing_frame, [palm, knuckles], False, PALM_COLOUR, width
         )
+        cv2.polylines(drawing_frame, [pinky], False, PINKY_COLOUR, width)
+        cv2.polylines(drawing_frame, [ring], False, RING_COLOUR, width)
+        cv2.polylines(drawing_frame, [middle], False, MIDDLE_COLOUR, width)
+        cv2.polylines(drawing_frame, [index], False, INDEX_COLOUR, width)
+        cv2.polylines(drawing_frame, [thumb], False, THUMB_COLOUR, width)
 
         for p in pixel_coords:
-            cv2.circle(drawing_frame, p, 1, WHITE_RGB, -1)
+            cv2.circle(drawing_frame, p, 6, base_colour, -1)
+
+        for p in pixel_coords:
+            cv2.circle(drawing_frame, p, 2, WHITE_RGB, -1)
 
         return drawing_frame
