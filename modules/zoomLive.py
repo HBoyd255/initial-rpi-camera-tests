@@ -166,7 +166,7 @@ class Zoom:
 
             # Alternate between looking for left and right hand every 3 frames.
             use_left = i // 3 & 1
-            print("Recapturing Body")
+            # print("Recapturing Body")
 
             body = self._get_pose(full_fov_thumb)
 
