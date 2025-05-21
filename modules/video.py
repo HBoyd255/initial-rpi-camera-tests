@@ -95,25 +95,28 @@ class Video:
         frame = numpy.array(frame, dtype=numpy.uint8)
 
         # Add frame name to frame.
-        cv2.putText(
-            frame,
-            f"{name} ({self._frame_width} x {self._frame_height})",
-            (15, 30),
-            cv2.FONT_HERSHEY_TRIPLEX,
-            1,
-            (0, 0, 255),
-            2,
-        )
-        if second_row_text is not None:
+
+        # TODO Fix this
+        if name is not None:
             cv2.putText(
                 frame,
-                second_row_text,
-                (15, 60),
+                f"{name} ({self._frame_width} x {self._frame_height})",
+                (15, 30),
                 cv2.FONT_HERSHEY_TRIPLEX,
                 1,
                 (0, 0, 255),
                 2,
             )
+            if second_row_text is not None:
+                cv2.putText(
+                    frame,
+                    second_row_text,
+                    (15, 60),
+                    cv2.FONT_HERSHEY_TRIPLEX,
+                    1,
+                    (0, 0, 255),
+                    2,
+                )
 
         if not self._local:
 
