@@ -25,8 +25,6 @@ class Zoom:
 
         self._zoom_coords = numpy.array([1 / 8, 1 / 8])
 
-        self._left_is_dominant = True
-
         self._concurrent_failures = 0
 
         self._hand_mp_full = mediapipe.solutions.hands.Hands(
@@ -164,15 +162,18 @@ class Zoom:
 
         if self._concurrent_failures > self.recalibration_threshold:
 
+            i = self._concurrent_failures - self.recalibration_threshold
+
+            # Alternate between looking for left and right hand every 3 frames.
+            use_left = i // 3 & 1
             # print("Recapturing Body")
-            self._left_is_dominant = not self._left_is_dominant
+
             body = self._get_pose(full_fov_thumb)
 
             if body.is_seen():
-                self._recenter_from_body(body, use_left=self._left_is_dominant)
+                self._recenter_from_body(body, use_left=use_left)
             else:
                 self.use_zoom = False
-            
 
         if self.use_zoom is False:
             hand = self.get_from_fov(full_fov_thumb)

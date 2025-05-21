@@ -1,23 +1,18 @@
-from functools import lru_cache
 import time
 import cv2
 
 import mediapipe
 import numpy
-from modules.duration import Duration
 from modules.eye import Eye
-from modules.video import Video
 
-vid = Video(canvas_framing=(1, 1))
-eye = Eye("left")
-
+from modules.zoomLive import Zoom
 
 mp_holistics = mediapipe.solutions.holistic
-
 holistic = mp_holistics.Holistic(static_image_mode=False)
 
-
-holistic_results = []
+baseline_a = []
+baseline_b = []
+total_times = []
 
 
 def get_frame(i):
@@ -28,35 +23,46 @@ def get_frame(i):
     return frame
 
 
-dura = Duration()
-
-dura.head()
-
-
-print("Time to load images from memory and convert to RGB")
+print("Time to load images from memory and convert to RGB again")
 for i in range(100):
 
     print(f"{i}/100")
 
+    start = time.time()
+
     frame = get_frame(i)
+
     bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-dura.flag()
+    end = time.time()
+    duration = end - start
+
+    baseline_a.append(duration)
+
 
 print("Time to load images from memory and convert to RGB again")
 for i in range(100):
 
     print(f"{i}/100")
 
+    start = time.time()
+
     frame = get_frame(i)
+
     bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-dura.flag()
+    end = time.time()
+    duration = end - start
+
+    baseline_b.append(duration)
+
 
 print("Time to load images from memory, and prossess.")
 for i in range(100):
 
     print(f"{i}/100")
+
+    start = time.time()
 
     frame = get_frame(i)
 
@@ -64,65 +70,87 @@ for i in range(100):
 
     results = holistic.process(bgr)
 
-    holistic_results.append(results)
+    end = time.time()
+    duration = end - start
 
-# dura.flag()
-#
-# print("Time to load images from cashe, draw results and save.")
-# for i in range(100):
-#
-#     print(f"{i}/100")
-#
-#     frame = get_frame_RGB(i)
-#
-#     path = f"data/video_Hol/frame_{i}.png"
-#
-#     cv2.imwrite(path, frame)
-#
-#     results
+    total_times.append(duration)
 
 
-dura.flag()
-dura.head()
+baseline_b = numpy.array(baseline_b)
+total_times = numpy.array(total_times)
 
+proc_times = total_times - baseline_b
 
-successes = [
-    results.right_hand_landmarks is not None for results in holistic_results
-]
-
-count = numpy.sum(successes)
-
-print(successes)
-print(count)
-
-
-# static_image_mode=True
-
-# EvaluateHolistics.py:44 -> EvaluateHolistics.py:54 = 6971.7ms.
-# EvaluateHolistics.py:54 -> EvaluateHolistics.py:85 = 23431.2ms.
-
-# 23431.2ms. - 6971.7ms. = 16459.5
+numpy.savetxt("1_HOL_C.txt", proc_times)
 
 
 
-# 16459.5 ms for for 100 images
 
-# 164.595 ms per frame
 
-# 6.0755186974 FPS
+baseline_a = []
+baseline_b = []
+total_times = []
 
-# 73% Success
+mp_holistics = mediapipe.solutions.holistic
+holistic = mp_holistics.Holistic(static_image_mode=True)
 
-# static_image_mode=False
 
-# EvaluateHolistics.py:44 -> EvaluateHolistics.py:54 = 7255.64ms.
-# EvaluateHolistics.py:54 -> EvaluateHolistics.py:85 = 19247.04ms.
+print("Time to load images from memory and convert to RGB again")
+for i in range(100):
 
-# 19247.04 - 7255.64 = 11991.4
+    print(f"{i}/100")
 
-# 11991.4 for 100
-# 119.914 for 1
+    start = time.time()
 
-# 8.3393098387 FPS
+    frame = get_frame(i)
 
-# 78
+    bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    end = time.time()
+    duration = end - start
+
+    baseline_a.append(duration)
+
+
+print("Time to load images from memory and convert to RGB again")
+for i in range(100):
+
+    print(f"{i}/100")
+
+    start = time.time()
+
+    frame = get_frame(i)
+
+    bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    end = time.time()
+    duration = end - start
+
+    baseline_b.append(duration)
+
+
+print("Time to load images from memory, and prossess.")
+for i in range(100):
+
+    print(f"{i}/100")
+
+    start = time.time()
+
+    frame = get_frame(i)
+
+    bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    results = holistic.process(bgr)
+
+    end = time.time()
+    duration = end - start
+
+    total_times.append(duration)
+
+
+baseline_b = numpy.array(baseline_b)
+total_times = numpy.array(total_times)
+
+proc_times = total_times - baseline_b
+
+numpy.savetxt("1_HOL_S.txt", proc_times)
