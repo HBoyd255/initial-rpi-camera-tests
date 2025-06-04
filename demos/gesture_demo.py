@@ -5,9 +5,9 @@ from modules.eye import Eye
 from modules.gesture import GestureClassifier
 from modules.localiser import Localiser
 from modules.fps import FPS
-from modules.topDown import TopDown
+from modules.top_down import TopDown
 from modules.video import Video
-from modules.zoomLive import Zoom
+from modules.zoom import Zoom
 
 
 from typing import NamedTuple, cast

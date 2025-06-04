@@ -1,15 +1,13 @@
 import numpy
+from modules.data_set_control_centre_height import DataSetControlCentreHeight
 from modules.video import Video
-from modules.zoomTestBench import Zoom
+from modules.zoom import Zoom
 
-from modules.dataSetControlWaistHeight import DataSetControlWaistHeight
 from modules.localiser import Localiser
 
 localiser = Localiser()
 
-
-dscwh = DataSetControlWaistHeight()
-
+dscch = DataSetControlCentreHeight()
 
 CONTINUOUS = False
 ZOOM_STATE = "low_res"
@@ -18,8 +16,8 @@ USE_SIMPLE = ZOOM_STATE in ("low_res", "full_res")
 USE_FULL = ZOOM_STATE in ("full_res")
 
 
-angles = dscwh.get_angles()
-dists = dscwh.get_distances()
+angles = dscch.get_angles()
+dists = dscch.get_distances()
 
 vid = Video(local=True)
 
@@ -36,7 +34,7 @@ for angle in angles:
 
     if CONTINUOUS:
         for i in range(3):
-            left_frame, right_frame = dscwh.get_frames(dists[0], angle)
+            left_frame, right_frame = dscch.get_frames(dists[0], angle)
 
             left_hand = left_hand_finder.get_hand(
                 left_frame, simple=USE_SIMPLE, use_full=USE_FULL
@@ -55,7 +53,7 @@ for angle in angles:
 
     for dist in dists:
 
-        left_frame, right_frame = dscwh.get_frames(dist, angle)
+        left_frame, right_frame = dscch.get_frames(dist, angle)
 
         left_hand = left_hand_finder.get_hand(
             left_frame, simple=USE_SIMPLE, use_full=USE_FULL
@@ -66,7 +64,7 @@ for angle in angles:
 
         predicted_points = localiser.get_coords(left_hand, right_hand)
 
-        dscwh.save_predicted(
+        dscch.save_predicted(
             dist,
             angle,
             predicted_points,

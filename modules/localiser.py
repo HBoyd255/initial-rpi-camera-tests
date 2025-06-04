@@ -2,7 +2,7 @@ import cv2
 import numpy
 
 from modules.colours import *
-from modules.evaluateVariable import evaluate_variable
+from modules.evaluate_variable import evaluate_variable
 from modules.hand import Hand
 from modules.physical import FOCAL_LENGTH_M, SENSOR_SIZE_M, STEREO_BASELINE_M
 

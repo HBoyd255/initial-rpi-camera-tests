@@ -23,7 +23,7 @@ class Zoom:
 
         self.resolution_full = None
 
-        self._zoom_coords = numpy.array([1 / 8, 1 / 8])
+        self._zoom_coords = numpy.array([1 / 2, 3 / 4])
 
         self._concurrent_failures = 0
 
@@ -32,6 +32,7 @@ class Zoom:
             max_num_hands=1,
             min_detection_confidence=0.3,
             min_tracking_confidence=0.7,
+            model_complexity=0,
         )
 
         self._hand_mp_zoom = mediapipe.solutions.hands.Hands(
@@ -39,16 +40,18 @@ class Zoom:
             max_num_hands=1,
             min_detection_confidence=0.3,
             min_tracking_confidence=0.7,
+            model_complexity=0,
         )
 
         self._pose_mp = mediapipe.solutions.pose.Pose(
             static_image_mode=True,
-            min_detection_confidence=0.5,
         )
 
         self._memory_count = memory_count
 
         self._last_hand_seen = Hand(None)
+
+        self._last_body = None
 
     def get_from_fov(self, frame_th) -> Hand:
 
@@ -60,7 +63,7 @@ class Zoom:
 
         return hand_from_full
 
-    def get_from_zoom(self, frame_f) -> Hand:
+    def _get_zoom_frame(self, frame_f):
 
         off_x = int(self._zoom_coords[0] * self.resolution_full[0])
         off_y = int(self._zoom_coords[1] * self.resolution_full[1])
@@ -72,6 +75,12 @@ class Zoom:
             off_y - bound_y : off_y + bound_y,
             off_x - bound_x : off_x + bound_x,
         ]
+
+        return zoom_frame
+
+    def _get_from_zoom(self, frame_f) -> Hand:
+
+        zoom_frame = self._get_zoom_frame(frame_f)
 
         zoom_hand_results = self._hand_mp_zoom.process(
             cv2.cvtColor(zoom_frame, cv2.COLOR_BGR2RGB)
@@ -95,9 +104,11 @@ class Zoom:
         )
         body = Body(pose_results)
 
+        self._last_body = body
+
         return body
 
-    def _recenter_from_hand(self, hand):
+    def _recenter_from_hand(self, hand: Hand):
 
         dif = self._zoom_coords - hand.get_centre()
 
@@ -193,7 +204,7 @@ class Zoom:
             return hand
 
         else:
-            hand = self.get_from_zoom(full_res_frame)
+            hand = self._get_from_zoom(full_res_frame)
 
             if hand.is_seen():
                 self._recenter_from_hand(hand)
@@ -235,5 +246,14 @@ class Zoom:
 
         cv2.line(drawing_frame, (start_x, start_y), (end_x, start_y), RED, 1)
         cv2.line(drawing_frame, (start_x, end_y), (end_x, end_y), RED, 1)
+
+        return drawing_frame
+
+    def draw_last_body(self, frame):
+
+        drawing_frame = numpy.copy(frame)
+
+        if self._last_body is not None:
+            drawing_frame = self._last_body.draw(drawing_frame)
 
         return drawing_frame

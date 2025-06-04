@@ -2,14 +2,14 @@ from collections import deque
 import time
 import numpy
 from modules.colours import *
-from modules.evaluate_variable import evaluate_variable
+from modules.evaluateVariable import evaluate_variable
 from modules.eye import Eye
 
 from modules.localiser import Localiser
 from modules.fps import FPS
-from modules.top_down import TopDown
+from modules.topDown import TopDown
 from modules.video import Video
-from modules.zoom import Zoom
+from modules.zoomLive import Zoom
 
 
 from typing import NamedTuple, cast
