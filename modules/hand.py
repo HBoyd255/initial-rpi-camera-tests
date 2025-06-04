@@ -17,6 +17,7 @@ class Hand:
         if not self._seen:
             self._is_left = False
             self.landmarks = numpy.zeros((21, 2), numpy.float64)
+            self._seen_from_zoom = False
 
             return
 
@@ -33,9 +34,6 @@ class Hand:
         )
 
         self._seen_from_zoom = seen_from_zoom
-
-        # self.angle_rad = 0.0
-        # self.gesture = "Unknown"
 
     def is_seen(self):
         return self._seen
